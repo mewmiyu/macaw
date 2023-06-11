@@ -1,0 +1,9 @@
+TRAINING:
+  PARAMETERS:
+    LR: 0.001
+    BATCH_SIZE: 64
+    EPOCHS: 20
+    STEPS_PER_EPOCH: 150
+  DEVICE: "cuda"
+METHOD: "train"
+  
