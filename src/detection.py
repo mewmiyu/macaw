@@ -28,14 +28,14 @@ def load_img(filename: str, size: tuple = None) -> tuple[np.ndarray, np.ndarray]
     return img, gray
 
 
-def compute_SIFT(img: np.ndarray) -> tuple[cv.KeyPoint]:
+def compute_SIFT(img: np.ndarray):  #  -> tuple[cv.KeyPoint]
     # SIFT: https://docs.opencv.org/4.x/da/df5/tutorial_py_sift_intro.html
 
     sift = cv.SIFT_create()
     pic = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX).astype('uint8')  # cv.cvtColor(gray, cv.COLOR_BGR2GRAY)
     kp, des = sift.detectAndCompute(pic, None)
 
-    return kp
+    return kp, des
 
 
 def compute_harris(img: np.ndarray, threshold=0.01):
@@ -52,7 +52,7 @@ def compute_harris(img: np.ndarray, threshold=0.01):
     return np.argwhere(dst > threshold * dst.max()), img2
 
 
-def compute_ORB(img: np.ndarray) -> tuple[cv.KeyPoint]:
+def compute_ORB(img: np.ndarray):
     # ORB: https://docs.opencv.org/3.4/d1/d89/tutorial_py_orb.html
 
     # Initiate ORB detector
@@ -98,7 +98,8 @@ def match_flann(des, des2, img, img2, kp, kp2):
                         multi_probe_level=2)
     search_params = {}
     flann = cv.FlannBasedMatcher(index_params, search_params)
-    matches = flann.knnMatch(des, des2, k=2)
+    bf = cv.BFMatcher()
+    matches = bf.knnMatch(des, des2, k=2)
     good_matches = []
 
     for m, n in matches:
@@ -121,40 +122,29 @@ def match_flann(des, des2, img, img2, kp, kp2):
         dst_points = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
         m, mask = cv.findHomography(src_points, dst_points, cv.RANSAC, 5.0)
         corrected_img = cv.warpPerspective(img, m, (img2.shape[1], img2.shape[0]))
-        cv.imshow('Corrected image', corrected_img)
+        # cv.imshow('Corrected image', corrected_img)
 
 
 def main():
-    file = 'Untitled.jpg'
+    file = '../imgs/20230522_114217683_iOS.jpg'
     img, gray = load_img(file, (600, 800))
 
-    file = 'Untitled_4.jpg'
+    file = '../imgs/IMG_20230519_135110_1.jpg'
     img2, gray2 = load_img(file, (600, 800))
 
-    # img2 = img
+    compute_feature = compute_SIFT
 
-    # SIFT: https://docs.opencv.org/4.x/da/df5/tutorial_py_sift_intro.html
-    # kp = compute_SIFT(gray)
+    kp, des = compute_feature(img)
+    kp2, des2 = compute_feature(img2)
 
-    # img_sift = cv.drawKeypoints(img, kp, None)
-    # img_sift = cv.drawKeypoints(img_sift, kp, None, flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    # cv.imshow('sift', img_sift)
+    # img3 = cv.drawKeypoints(img, kp, None, color=(0, 255, 0), flags=4)  # DRAW_RICH_KEYPOINTS = 4
+    # cv.imshow('orb', img3)
 
-    # Harris : https://docs.opencv.org/3.4/dc/d0d/tutorial_py_features_harris.html
-    # _, img_har = compute_harris(gray)
-    # cv.imshow('harris', img_har)
-
-    # ORB: https://docs.opencv.org/3.4/d1/d89/tutorial_py_orb.html
-    kp, des = compute_ORB(img)
-    img3 = cv.drawKeypoints(img, kp, None, color=(0, 255, 0), flags=4)  # DRAW_RICH_KEYPOINTS = 4
-    cv.imshow('orb', img3)
-
-    kp2, des2 = compute_ORB(img2)
-    img4 = cv.drawKeypoints(img2, kp, None, color=(0, 255, 0), flags=4)  # DRAW_RICH_KEYPOINTS = 4
-    cv.imshow('orb2', img4)
+    # img4 = cv.drawKeypoints(img2, kp, None, color=(0, 255, 0), flags=4)  # DRAW_RICH_KEYPOINTS = 4
+    # cv.imshow('orb2', img4)
 
     match_flann(des, des2, img, img2, kp, kp2)
-    #compute_Brute_Force(des, des2, img, img2, kp, kp2)
+    # match_brute_force(des, des2, img, img2, kp, kp2)
 
     if cv.waitKey(0) & 0xff == 27:
         cv.destroyAllWindows()
