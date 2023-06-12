@@ -1,13 +1,11 @@
 import cv2 as cv
 import numpy as np
 
-# ORB: https://docs.opencv.org/3.4/d1/d89/tutorial_py_orb.html
-
 # function for rendering the box
 ## see lecture 3d transformation slide 9 for help (rendering a bunny in a known space)
 ## -> we need to have a callibrated camera in that example, which is not possible in our case
 ## we also need either a mesh or a function, which gives us the metadata
-def render_img(K, dist_coeff, vid):
+def render_img1(K, dist_coeff, vid):
     """
     Renders the square around the building
     :param K: camera callibration matrix
@@ -28,25 +26,36 @@ def render_img(K, dist_coeff, vid):
         ## then we show the frame; theoretically, if we have a mesh we can use the function from the assignment
 
 
-# function for tracking the features or getting the result from another method
-def compute_features():
-    # todo we need the camera callibration for the box with metadata, but contours for the square
-    K = None
-    dist_coeff = None
+def render_img(img = None, ):
+    if img is None:
+        size = (600, 800)
+        img = np.zeros(size)
 
-    return K, dist_coeff
+    # draw all contours
+
+    # draw all meta-data
+
+    return img
+
+
+def render_contours(img: np.ndarray, contours) -> np.ndarray:
+    return cv.drawContours(img, contours, 0, (0, 255, 0), 2)
+
+
+def render_matches(img, kp, img2, kp2, matches):
+    return cv.drawMatches(img, kp, img2, kp2, matches, None)
 
 
 # function for either rendering the box with metadata or getting the result from ogre
-def render_metadata():
-    return None
+def render_metadata(img: np.ndarray) -> np.ndarray:
+    return img
 
 
 # main method
 ## note, if the ml algorithm doesnt work in the lecture "bildverarbeitung" on last slide is an algorithm for
 ## feature tracking
-def main():
-    K, dist_coeff = compute_features()
-    vid = cv.VideoCapture('test.mp4')
-    dictionary = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_6x6_250)
-    render_img(K, dist_coeff, vid)
+# def main():
+#     K, dist_coeff = compute_features()
+#     vid = cv.VideoCapture('test.mp4')
+#     dictionary = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_6x6_250)
+#     render_img(K, dist_coeff, vid)
