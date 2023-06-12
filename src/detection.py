@@ -110,27 +110,72 @@ def match_flann(des, des2, img, img2, kp, kp2):
 
     matches_pts = get_points_from_matched_keypoints(kp, good_matches)
     hull = convex_hull(matches_pts)
+    # hull = cv.boundingRect(matches_pts)
 
     match_img = cv.drawMatches(img, kp, img2, kp2, good_matches, None)
 
     match_img = cv.drawContours(match_img, [hull], 0, (0, 255, 0), 2)
+    # cv.imshow('Matches', match_img)
 
-    cv.imshow('Matches', match_img)
-
-    if len(good_matches) > 1:
+    if False and len(good_matches) > 1:
         src_points = np.float32([kp[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
         dst_points = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
         m, mask = cv.findHomography(src_points, dst_points, cv.RANSAC, 5.0)
         corrected_img = cv.warpPerspective(img, m, (img2.shape[1], img2.shape[0]))
         # cv.imshow('Corrected image', corrected_img)
 
+    return match_img, len(matches_pts)
+
 
 def main():
-    file = '../imgs/20230522_114217683_iOS.jpg'
+    file = '../imgs/Untitled.jpg'
     img, gray = load_img(file, (600, 800))
+    compute_feature = compute_SIFT
 
     file = '../imgs/IMG_20230519_135110_1.jpg'
     img2, gray2 = load_img(file, (600, 800))
+    kp2, des2 = compute_feature(img2)
+
+    vid = cv.VideoCapture('../imgs/VID_20230612_151251.mp4')
+    count = 0
+
+    while vid.isOpened():
+        frame = vid.read()[1]
+        # cv.imshow('frame', frame)
+
+        img = frame
+        size = [600, 800]
+        if size:
+            scale_percent = int(100 * size[0] / img.shape[0])
+            scale_percent = max(scale_percent, int(100 * size[1] / img.shape[1]))
+
+            width = int(img.shape[1] * scale_percent / 100)
+            height = int(img.shape[0] * scale_percent / 100)
+
+            img = cv.resize(img, (width, height), interpolation=cv.INTER_AREA)
+
+        # gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
+        gray = np.float32(cv.cvtColor(img, cv.COLOR_BGR2GRAY))
+
+
+        kp, des = compute_feature(gray)
+
+        img_n, nrMatched = match_flann(des, des2, img, img2, kp, kp2)
+        # match_brute_force(des, des2, img, img2, kp, kp2)
+
+        if nrMatched > 50:  # 0.1 * float(len(kp2)):
+            cv.imshow('frame%d.jpg'% count, img_n)
+        else:
+            cv.imshow('frame%d.jpg' % count, img)
+        # cv.imwrite("frame%d.jpg" % count, frame)
+        count = count + 1
+        # if cv.waitKey(10) & 0xFF == ord('q'):
+        #    break
+    vid.release()
+    cv.destroyAllWindows()
+
+    return
+
 
     compute_feature = compute_SIFT
 
