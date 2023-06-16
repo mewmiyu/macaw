@@ -88,31 +88,13 @@ def get_points_from_matched_keypoints(kp, matches):
     return pts
 
 
-def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
-    return cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
+def bounding_box(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
+    # cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
+    return cv.boundingRect(np.array(pts, dtype='int32').reshape((-1, 2)))
 
 
 # https://blog.francium.tech/feature-detection-and-matching-with-opencv-5fd2394a590
-def match_brute_force(des, des2, img, img2, kp, kp2):
-    # brute force matcher
-    bf = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=True)
-
-    matches = bf.match(des, des2)
-    matches = sorted(matches, key=lambda x: x.distance)
-
-    return matches  # TODO: remoe bad matches ?
-    # match_img = cv.drawMatches(img, kp, img2, kp2, matches[:50], None)  # draw first 50 matches
-    # cv.imshow('Matches', match_img)
-
-
-# https://blog.francium.tech/feature-detection-and-matching-with-opencv-5fd2394a590
-def match_flann(des, des2, img, img2, kp, kp2):
-    index_params = dict(algorithm=6,
-                        table_number=6,
-                        key_size=12,
-                        multi_probe_level=2)
-    search_params = {}
-    flann = cv.FlannBasedMatcher(index_params, search_params)
+def match_brute_force(des, des2):
     bf = cv.BFMatcher()
     matches = bf.knnMatch(des, des2, k=2)
     good_matches = []
@@ -154,29 +136,31 @@ def main():
 
     while vid.isOpened():
         ret, frame = vid.read()
+        if not frame is None:
+            size = (600, 600)
+            frame = resize_img(frame, size)
 
-        size = (600, 600)
-        frame = resize_img(frame, size)
+            gray = np.float32(cv.cvtColor(frame, cv.COLOR_BGR2GRAY))
 
-        gray = np.float32(cv.cvtColor(frame, cv.COLOR_BGR2GRAY))
+            kp, des = compute_feature(gray)
 
-        kp, des = compute_feature(gray)
+            matches = match_brute_force(des, des2)
 
-        matches = match_flann(des, des2, frame, img2, kp, kp2)
-        # matches = match_brute_force(des, des2, frame, img2, kp, kp2)  # TODO: BF-Matcher is not working
+            matches_pts = get_points_from_matched_keypoints(kp, matches)
+            img_n = np.copy(frame)
 
-        matches_pts = get_points_from_matched_keypoints(kp, matches)
-        img_n = frame
+            #img_n = rd.render_matches(img_n, kp, img2, kp2, matches)
+            #img_n = rd.render_contours(img_n, [convex_hull(matches_pts)])
+            boundRect = bounding_box(matches_pts)
+            cv.rectangle(img_n, (int(boundRect[0]), int(boundRect[1])), \
+                     (int(boundRect[2]), int(boundRect[3])), (255, 0, 0), 2)
 
-        #img_n = rd.render_matches(img_n, kp, img2, kp2, matches)
-        img_n = rd.render_contours(img_n, [convex_hull(matches_pts)])
+            if len(matches) > 60:  # 0.1 * float(len(kp2)):
+                cv.imshow('frame', img_n)
+            else:
+                cv.imshow('frame', frame)
 
-        if len(matches) > 50:  # 0.1 * float(len(kp2)):
-            cv.imshow('frame', img_n)
-        else:
-            cv.imshow('frame', frame)
-
-        count = count + 1
+            count = count + 1
         if cv.waitKey(10) & 0xFF == ord('q'):
             break
 
