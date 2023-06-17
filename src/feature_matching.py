@@ -1,5 +1,14 @@
+from threading import Thread
 import cv2 as cv
 import numpy as np
+
+import argparse
+from imutils.video import FileVideoStream
+from imutils.video import WebcamVideoStream
+from imutils.video import FPS
+import imutils
+import time
+import datetime
 
 import rendering as rd  # TODO: (TEMPORARY) Renderer should not be included in this file. In the end: All calls from Main
 
@@ -93,6 +102,11 @@ def bounding_box(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
     return cv.boundingRect(np.array(pts, dtype='int32').reshape((-1, 2)))
 
 
+def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
+    # cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
+    return cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
+
+
 # https://blog.francium.tech/feature-detection-and-matching-with-opencv-5fd2394a590
 def match_brute_force(des, des2):
     bf = cv.BFMatcher()
@@ -124,48 +138,135 @@ def match_brute_force(des, des2):
     # return match_img, len(matches_pts)
 
 
+def vid_handler(file):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-v", "--video", default=file,
+                    help="path to input video file")
+    args = vars(ap.parse_args())
+
+    return FileVideoStream(args["video"], queue_size=128).start()
+
+
+def webcam_handler():
+    return WebcamVideoStream(src=0).start()
+
+
 def main():
+
     compute_feature = compute_features_sift
-
     file = '../imgs/IMG_20230519_135110_1.jpg'
+
+    # vid_stream(file)
+    # return
+
     img2, gray2 = load_img(file, (600, 800))
-    kp2, des2 = compute_feature(img2)
+    kp2, des2 = compute_feature(gray2)
 
-    vid = cv.VideoCapture('../imgs/VID_20230612_151251.mp4')
+    file = '../imgs/VID_20230612_151251.mp4'
+
+    fvs = vid_handler(file)  # webcam_handler()  #
     count = 0
+    fps = FPS().start()
+    fps.update()
 
-    while vid.isOpened():
-        ret, frame = vid.read()
-        if not frame is None:
-            size = (600, 600)
-            frame = resize_img(frame, size)
+    # loop over frames from the video file stream
+    while True:  # fvs.more():
+        # grab the frame from the threaded video file stream, resize
+        # it, and convert it to grayscale (while still retaining 3
+        # channels)
 
-            gray = np.float32(cv.cvtColor(frame, cv.COLOR_BGR2GRAY))
+        frame = fvs.read()
+        # if frame is None:
+        #     break
+        #
+        frame = imutils.resize(frame, width=450)
+        # frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        # frame = np.dstack([frame, frame, frame])
 
-            kp, des = compute_feature(gray)
+        gray = np.float32(cv.cvtColor(frame, cv.COLOR_BGR2GRAY))
+        gray = cv.GaussianBlur(gray, (5, 5), 0)
 
-            matches = match_brute_force(des, des2)
+        kp, des = compute_feature(gray)
 
-            matches_pts = get_points_from_matched_keypoints(kp, matches)
-            img_n = np.copy(frame)
+        matches = match_brute_force(des, des2)
 
-            #img_n = rd.render_matches(img_n, kp, img2, kp2, matches)
-            #img_n = rd.render_contours(img_n, [convex_hull(matches_pts)])
-            boundRect = bounding_box(matches_pts)
-            cv.rectangle(img_n, (int(boundRect[0]), int(boundRect[1])), \
-                     (int(boundRect[2]), int(boundRect[3])), (255, 0, 0), 2)
+        matches_pts = get_points_from_matched_keypoints(kp, matches)
+        img_n = np.copy(frame)
 
-            if len(matches) > 60:  # 0.1 * float(len(kp2)):
-                cv.imshow('frame', img_n)
-            else:
-                cv.imshow('frame', frame)
+        # img_n = rd.render_matches(img_n, kp, img2, kp2, matches)
 
-            count = count + 1
-        if cv.waitKey(10) & 0xFF == ord('q'):
-            break
+        boundRect = bounding_box(matches_pts)
+        cv.rectangle(img_n, (int(boundRect[0]), int(boundRect[1])), (int(boundRect[2]), int(boundRect[3])), (0, 255, 0), 2)
+        # img_n = rd.render_contours(img_n, [convex_hull(matches_pts)])
 
-    vid.release()
+
+        if len(matches) > 60:  # 0.1 * float(len(kp2)):
+            target = img_n
+        else:
+            target = frame
+
+
+        # END rendering pipeline
+        cv.putText(target, "approx. FPS: {:.2f}".format(fps._numFrames / ((datetime.datetime.now() - fps._start).total_seconds())), (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        # show the frame and update the FPS counter
+
+        # display the size of the queue on the frame
+        cv.imshow('frame', target)
+        cv.waitKey(1)
+        fps.update()
+
+    # stop the timer and display FPS information
+    fps.stop()
+    print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
+    print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+    # do a bit of cleanup
     cv.destroyAllWindows()
+    fvs.stop()
+
+
+
+
+
+
+
+
+
+
+    # while vid.isOpened():
+    #
+    #     ret, frame = vid.read()
+    #
+    #     if not frame is None:
+    #         size = (600, 600)
+    #         frame = resize_img(frame, size)
+    #
+    #         gray = np.float32(cv.cvtColor(frame, cv.COLOR_BGR2GRAY))
+    #         gray = cv.GaussianBlur(gray, (5, 5), 0)
+
+    #         kp, des = compute_feature(gray)
+    #
+    #         matches = match_brute_force(des, des2)
+    #
+    #         matches_pts = get_points_from_matched_keypoints(kp, matches)
+    #         img_n = np.copy(frame)
+    #
+    #         #img_n = rd.render_matches(img_n, kp, img2, kp2, matches)
+    #
+    #         boundRect = bounding_box(matches_pts)
+    #         # cv.rectangle(img_n, (int(boundRect[0]), int(boundRect[1])), (int(boundRect[2]), int(boundRect[3])), (0, 255, 0), 2)
+    #         img_n = rd.render_contours(img_n, [convex_hull(matches_pts)])
+    #
+    #         if len(matches) > 60:  # 0.1 * float(len(kp2)):
+    #             cv.imshow('frame', img_n)
+    #         else:
+    #             cv.imshow('frame', frame)
+    #
+    #         count = count + 1
+    #     if cv.waitKey(10) & 0xFF == ord('q'):
+    #         break
+    #
+    # vid.release()
+    # cv.destroyAllWindows()
 
     return
 
