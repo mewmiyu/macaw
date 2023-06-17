@@ -99,8 +99,9 @@ def get_points_from_matched_keypoints(kp, matches):
 
 
 def bounding_box(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
+    br = cv.boundingRect(np.array(pts, dtype='int32').reshape((-1, 2)))
+    return np.array([[[br[0], br[1]]], [[br[2], br[1]]],[[br[2], br[3]]], [[br[0], br[3]]]])
     # cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
-    return cv.boundingRect(np.array(pts, dtype='int32').reshape((-1, 2)))
 
 
 def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
@@ -109,7 +110,8 @@ def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
 
 
 # https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
-def match_flann(des, des2, kp, kp2, img, img2):
+def match_flann(des, des2, kp, kp2, img, img2, MATCHING_THRESHOLD=20):
+
     FLANN_INDEX_KDTREE = 1
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
     search_params = dict(checks=50)
@@ -121,10 +123,11 @@ def match_flann(des, des2, kp, kp2, img, img2):
         if m.distance < 0.7 * n.distance:
             good.append(m)
 
-    if len(good) > 30:
-        # we map from the template to the destination
-        src_pts = np.float32([kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
-        dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+    # we map from the template to the destination
+    src_pts = np.float32([kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+    dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+
+    if len(good) > 2 * MATCHING_THRESHOLD:
         M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
         matchesMask = mask.ravel().tolist()
         h, w = img2.shape
@@ -133,14 +136,15 @@ def match_flann(des, des2, kp, kp2, img, img2):
         #img = cv.polylines(img, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
 
         #draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
-                       #singlePointColor=None,
-                       #matchesMask=matchesMask,  # draw only inliers
-                       #flags=2)
+        #singlePointColor=None,
+        #matchesMask=matchesMask,  # draw only inliers
+        #flags=2)
         #img3 = cv.drawMatches(np.uint8(img), kp, np.uint8(img2), kp2, good, None, **draw_params)
         #plt.imshow(img3, 'gray'), plt.show()
         # mask = np.squeeze(mask)
         return dst
-
+    if len(good) > MATCHING_THRESHOLD:
+        return bounding_box(dst_pts)
     return None
 
 
@@ -182,8 +186,8 @@ def main():
         # channels)
 
         frame = fvs.read()
-        # if frame is None:
-        #     break
+        if frame is None:
+            break
         #
         frame = imutils.resize(frame, width=450)
         # frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
@@ -194,14 +198,10 @@ def main():
 
         kp, des = compute_feature(gray)
 
-        dst = match_flann(des, des2, kp, kp2, gray, gray2)
-
+        dst = match_flann(des, des2, kp, kp2, gray, gray2, 20)
         #matches_pts = get_points_from_matched_keypoints(kp2, matches)
         img_n = np.copy(frame)
 
-        # img_n = rd.render_matches(img_n, kp, img2, kp2, matches)
-        if not dst is None:
-            cv.polylines(img_n, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
         #boundRect = bounding_box(matches_pts)
         #cv.rectangle(img_n, (int(boundRect[0]), int(boundRect[1])), (int(boundRect[2]), int(boundRect[3])), (0, 255, 0), 2)
         #x = dst[0, 0, 0]
@@ -210,7 +210,14 @@ def main():
 
 
         if not dst is None:  # 0.1 * float(len(kp2)):
+            # img_n = rd.render_matches(img_n, kp, img2, kp2, matches)
             target = img_n
+            # boundRect = bounding_box(dst)
+            # cv.rectangle(target, (int(boundRect[0]), int(boundRect[1])), (int(boundRect[2]), int(boundRect[3])),
+            #              (0, 255, 0), 2)
+            # # target = rd.render_contours(target, bounding_box(dst))
+            target = rd.render_contours(target, [np.int32(dst)])
+            # cv.polylines(img_n, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
         else:
             target = frame
 
