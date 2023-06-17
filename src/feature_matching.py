@@ -122,8 +122,9 @@ def match_flann(des, des2, kp, kp2, img, img2):
             good.append(m)
 
     if len(good) > 10:
-        dst_pts = np.float32([kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
-        src_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+        # we map from the template to the destination
+        src_pts = np.float32([kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+        dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
         M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
         matchesMask = mask.ravel().tolist()
         h, w = img.shape
@@ -137,8 +138,8 @@ def match_flann(des, des2, kp, kp2, img, img2):
                        flags=2)
         img3 = cv.drawMatches(np.uint8(img), kp, np.uint8(img2), kp2, good, None, **draw_params)
         plt.imshow(img3, 'gray'), plt.show()
-        mask = np.squeeze(mask)
-        #return [good[m] for m in mask], dst
+        # mask = np.squeeze(mask)
+        # return [good[m] for m in mask], dst
 
     return good
 
@@ -193,9 +194,9 @@ def main():
 
         kp, des = compute_feature(gray)
 
-        matches = match_flann(des, des2, kp, kp2, gray, img2)
+        matches = match_flann(des2, des, kp2, kp, gray2, gray)
 
-        matches_pts = get_points_from_matched_keypoints(kp, matches)
+        matches_pts = get_points_from_matched_keypoints(kp2, matches)
         img_n = np.copy(frame)
 
         # img_n = rd.render_matches(img_n, kp, img2, kp2, matches)
