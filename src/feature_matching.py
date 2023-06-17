@@ -9,6 +9,7 @@ from imutils.video import FPS
 import imutils
 import time
 import datetime
+from matplotlib import pyplot as plt
 
 import rendering as rd  # TODO: (TEMPORARY) Renderer should not be included in this file. In the end: All calls from Main
 
@@ -121,22 +122,23 @@ def match_flann(des, des2, kp, kp2, img, img2):
             good.append(m)
 
     if len(good) > 10:
-        src_pts = np.float32([kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
-        dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+        dst_pts = np.float32([kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+        src_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
         M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
         matchesMask = mask.ravel().tolist()
         h, w = img.shape
         pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
-        #dst = cv.perspectiveTransform(pts, M)
-        #img2 = cv.polylines(img2, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
+        dst = cv.perspectiveTransform(pts, M)
+        img = cv.polylines(img, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
 
-        #draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
-                       #singlePointColor=None,
-                       #matchesMask=matchesMask,  # draw only inliers
-                       #flags=2)
-        #img3 = cv.drawMatches(np.uint8(img), kp, np.uint8(img2), kp2, good, None, **draw_params)
-        #plt.imshow(img3, 'gray'), plt.show()
-        #return good[matchesMask]
+        draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
+                       singlePointColor=None,
+                       matchesMask=matchesMask,  # draw only inliers
+                       flags=2)
+        img3 = cv.drawMatches(np.uint8(img), kp, np.uint8(img2), kp2, good, None, **draw_params)
+        plt.imshow(img3, 'gray'), plt.show()
+        mask = np.squeeze(mask)
+        #return [good[m] for m in mask], dst
 
     return good
 
@@ -157,7 +159,7 @@ def webcam_handler():
 def main():
 
     compute_feature = compute_features_sift
-    file = '../imgs/IMG_20230519_135110_1.jpg'
+    file = '../imgs/mask_Hauptgebaeude_tree.jpg'
 
     # vid_stream(file)
     # return
@@ -165,7 +167,7 @@ def main():
     img2, gray2 = load_img(file, (600, 800))
     kp2, des2 = compute_feature(gray2)
 
-    file = '../imgs/VID_20230612_151251.mp4'
+    file = '../imgs/VID_20230612_172955.mp4'
 
     fvs = vid_handler(file)  # webcam_handler()  #
     count = 0
@@ -200,6 +202,8 @@ def main():
 
         boundRect = bounding_box(matches_pts)
         cv.rectangle(img_n, (int(boundRect[0]), int(boundRect[1])), (int(boundRect[2]), int(boundRect[3])), (0, 255, 0), 2)
+        #x = dst[0, 0, 0]
+        #cv.rectangle(img_n, (int(dst[0, 0, 0]), int(dst[1, 0, 0])), (int(dst[2, 0, 0]), int(dst[3, 0, 0])) , (0, 255, 0), 2)
         # img_n = rd.render_contours(img_n, [convex_hull(matches_pts)])
 
 
