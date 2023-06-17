@@ -121,27 +121,27 @@ def match_flann(des, des2, kp, kp2, img, img2):
         if m.distance < 0.7 * n.distance:
             good.append(m)
 
-    if len(good) > 10:
+    if len(good) > 30:
         # we map from the template to the destination
         src_pts = np.float32([kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
         dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
         M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
         matchesMask = mask.ravel().tolist()
-        h, w = img.shape
+        h, w = img2.shape
         pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
-        dst = cv.perspectiveTransform(pts, M)
-        img = cv.polylines(img, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
+        dst = cv.perspectiveTransform(pts, np.linalg.pinv(M))
+        #img = cv.polylines(img, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
 
-        draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
-                       singlePointColor=None,
-                       matchesMask=matchesMask,  # draw only inliers
-                       flags=2)
-        img3 = cv.drawMatches(np.uint8(img), kp, np.uint8(img2), kp2, good, None, **draw_params)
-        plt.imshow(img3, 'gray'), plt.show()
+        #draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
+                       #singlePointColor=None,
+                       #matchesMask=matchesMask,  # draw only inliers
+                       #flags=2)
+        #img3 = cv.drawMatches(np.uint8(img), kp, np.uint8(img2), kp2, good, None, **draw_params)
+        #plt.imshow(img3, 'gray'), plt.show()
         # mask = np.squeeze(mask)
-        # return [good[m] for m in mask], dst
+        return dst
 
-    return good
+    return None
 
 
 def vid_handler(file):
@@ -194,21 +194,22 @@ def main():
 
         kp, des = compute_feature(gray)
 
-        matches = match_flann(des2, des, kp2, kp, gray2, gray)
+        dst = match_flann(des, des2, kp, kp2, gray, gray2)
 
-        matches_pts = get_points_from_matched_keypoints(kp2, matches)
+        #matches_pts = get_points_from_matched_keypoints(kp2, matches)
         img_n = np.copy(frame)
 
         # img_n = rd.render_matches(img_n, kp, img2, kp2, matches)
-
-        boundRect = bounding_box(matches_pts)
-        cv.rectangle(img_n, (int(boundRect[0]), int(boundRect[1])), (int(boundRect[2]), int(boundRect[3])), (0, 255, 0), 2)
+        if not dst is None:
+            cv.polylines(img_n, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
+        #boundRect = bounding_box(matches_pts)
+        #cv.rectangle(img_n, (int(boundRect[0]), int(boundRect[1])), (int(boundRect[2]), int(boundRect[3])), (0, 255, 0), 2)
         #x = dst[0, 0, 0]
         #cv.rectangle(img_n, (int(dst[0, 0, 0]), int(dst[1, 0, 0])), (int(dst[2, 0, 0]), int(dst[3, 0, 0])) , (0, 255, 0), 2)
         # img_n = rd.render_contours(img_n, [convex_hull(matches_pts)])
 
 
-        if len(matches) > 10:  # 0.1 * float(len(kp2)):
+        if not dst is None:  # 0.1 * float(len(kp2)):
             target = img_n
         else:
             target = frame
