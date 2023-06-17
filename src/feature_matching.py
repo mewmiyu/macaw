@@ -107,35 +107,38 @@ def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
     return cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
 
 
-# https://blog.francium.tech/feature-detection-and-matching-with-opencv-5fd2394a590
-def match_brute_force(des, des2):
-    bf = cv.BFMatcher()
-    matches = bf.knnMatch(des, des2, k=2)
-    good_matches = []
-
+# https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
+def match_flann(des, des2, kp, kp2, img, img2):
+    FLANN_INDEX_KDTREE = 1
+    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+    search_params = dict(checks=50)
+    flann = cv.FlannBasedMatcher(index_params, search_params)
+    matches = flann.knnMatch(des, des2, k=2)
+    # store all the good matches as per Lowe's ratio test.
+    good = []
     for m, n in matches:
-        if m.distance < 0.8 * n.distance:
-            good_matches.append(m)
+        if m.distance < 0.7 * n.distance:
+            good.append(m)
 
-    return good_matches
-    # matches_pts = get_points_from_matched_keypoints(kp, good_matches)
-    # hull = convex_hull(matches_pts)
-    # # hull = cv.boundingRect(matches_pts)
-    #
-    # match_img = img
-    # # match_img = cv.drawMatches(match_img, kp, img2, kp2, good_matches, None)
-    #
-    # match_img = cv.drawContours(match_img, [hull], 0, (0, 255, 0), 2)
-    # # cv.imshow('Matches', match_img)
-    #
-    # if False and len(good_matches) > 1:
-    #     src_points = np.float32([kp[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-    #     dst_points = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-    #     m, mask = cv.findHomography(src_points, dst_points, cv.RANSAC, 5.0)
-    #     corrected_img = cv.warpPerspective(img, m, (img2.shape[1], img2.shape[0]))
-    #     # cv.imshow('Corrected image', corrected_img)
-    #
-    # return match_img, len(matches_pts)
+    if len(good) > 10:
+        src_pts = np.float32([kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+        dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+        M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
+        matchesMask = mask.ravel().tolist()
+        h, w = img.shape
+        pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+        #dst = cv.perspectiveTransform(pts, M)
+        #img2 = cv.polylines(img2, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
+
+        #draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
+                       #singlePointColor=None,
+                       #matchesMask=matchesMask,  # draw only inliers
+                       #flags=2)
+        #img3 = cv.drawMatches(np.uint8(img), kp, np.uint8(img2), kp2, good, None, **draw_params)
+        #plt.imshow(img3, 'gray'), plt.show()
+        #return good[matchesMask]
+
+    return good
 
 
 def vid_handler(file):
@@ -188,7 +191,7 @@ def main():
 
         kp, des = compute_feature(gray)
 
-        matches = match_brute_force(des, des2)
+        matches = match_flann(des, des2, kp, kp2, gray, img2)
 
         matches_pts = get_points_from_matched_keypoints(kp, matches)
         img_n = np.copy(frame)
@@ -200,7 +203,7 @@ def main():
         # img_n = rd.render_contours(img_n, [convex_hull(matches_pts)])
 
 
-        if len(matches) > 60:  # 0.1 * float(len(kp2)):
+        if len(matches) > 10:  # 0.1 * float(len(kp2)):
             target = img_n
         else:
             target = frame
