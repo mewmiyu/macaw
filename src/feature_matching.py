@@ -13,6 +13,7 @@ from matplotlib import pyplot as plt
 
 import rendering as rd  # TODO: (TEMPORARY) Renderer should not be included in this file. In the end: All calls from Main
 
+from detector import run_detector
 
 # from datetime import datetime
 #
@@ -164,7 +165,7 @@ def webcam_handler():
 def main():
 
     compute_feature = compute_features_sift
-    file = '../imgs/mask_Hauptgebaeude_tree.jpg'
+    file = '../masks/mask_Hauptgebaeude_no_tree.jpg'
 
     # vid_stream(file)
     # return
@@ -192,6 +193,8 @@ def main():
         frame = imutils.resize(frame, width=450)
         # frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         # frame = np.dstack([frame, frame, frame])
+
+        boxes, labels, scores = run_detector(frame)
 
         gray = np.float32(cv.cvtColor(frame, cv.COLOR_BGR2GRAY))
         gray = cv.GaussianBlur(gray, (5, 5), 0)

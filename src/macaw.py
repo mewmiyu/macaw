@@ -2,6 +2,12 @@ import utils
 import sys
 import methods.train as train
 
+
+def macaw():
+    return 1
+
+
+
 if __name__ == '__main__':
     if (len(sys.argv)) != 2:
         print("Failed to load config file.")
