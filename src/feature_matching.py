@@ -1,55 +1,13 @@
-from threading import Thread
 import cv2 as cv
 import numpy as np
 
-import argparse
-from imutils.video import FileVideoStream
-from imutils.video import WebcamVideoStream
 from imutils.video import FPS
-import imutils
 import time
-import datetime
-from matplotlib import pyplot as plt
 
-import rendering as rd  # TODO: (TEMPORARY) Renderer should not be included in this file. In the end: All calls from Main
+import utils
+from collections import namedtuple
 
-from detector import run_detector
-
-# from datetime import datetime
-#
-# start_time = datetime.now()
-#
-# # INSERT YOUR CODE
-#
-# time_elapsed = datetime.now() - start_time
-#
-# print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
-
-
-def load_img(filename: str, size: tuple = None) -> tuple[np.ndarray, np.ndarray]:
-    img = cv.imread(filename)
-    if size:
-        scale_percent = int(100 * size[0] / img.shape[0])
-        scale_percent = max(scale_percent, int(100 * size[1] / img.shape[1]))
-
-        width = int(img.shape[1] * scale_percent / 100)
-        height = int(img.shape[0] * scale_percent / 100)
-
-        img = cv.resize(img, (width, height), interpolation=cv.INTER_AREA)
-
-    # gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
-    gray = np.float32(cv.cvtColor(img, cv.COLOR_BGR2GRAY))
-    return img, gray
-
-
-def resize_img(img, target_size):
-    scale_percent = int(100 * target_size[0] / img.shape[0])
-    scale_percent = max(scale_percent, int(100 * target_size[1] / img.shape[1]))
-
-    width = int(img.shape[1] * scale_percent / 100)
-    height = int(img.shape[0] * scale_percent / 100)
-
-    return cv.resize(img, (width, height), interpolation=cv.INTER_AREA)
+Mask = namedtuple("Mask", ["kp", "des", "box"])
 
 
 def compute_features_sift(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:  #  -> tuple[cv.KeyPoint]
@@ -111,7 +69,7 @@ def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
 
 
 # https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
-def match_flann(des, des2, kp, kp2, img, img2, MATCHING_THRESHOLD=20):
+def match_flann(des, des2, kp, kp2, mask_shape, MATCHING_THRESHOLD=20):
 
     FLANN_INDEX_KDTREE = 1
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
@@ -128,55 +86,54 @@ def match_flann(des, des2, kp, kp2, img, img2, MATCHING_THRESHOLD=20):
     src_pts = np.float32([kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
     dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
 
-    if len(good) > 2 * MATCHING_THRESHOLD:
+    if len(good) > 2 * MATCHING_THRESHOLD:  # TODO: Outsource homography
         M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
-        matchesMask = mask.ravel().tolist()
-        h, w = img2.shape
+        h, w = mask_shape
         pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
         dst = cv.perspectiveTransform(pts, np.linalg.pinv(M))
-        #img = cv.polylines(img, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
-
-        #draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
-        #singlePointColor=None,
-        #matchesMask=matchesMask,  # draw only inliers
-        #flags=2)
-        #img3 = cv.drawMatches(np.uint8(img), kp, np.uint8(img2), kp2, good, None, **draw_params)
-        #plt.imshow(img3, 'gray'), plt.show()
-        # mask = np.squeeze(mask)
         return dst
     if len(good) > MATCHING_THRESHOLD:
         return bounding_box(dst_pts)
     return None
 
 
-def vid_handler(file):
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-v", "--video", default=file,
-                    help="path to input video file")
-    args = vars(ap.parse_args())
+def match(img: np.ndarray, masks: list[Mask], use_feature= 'SIFT'):
+    match use_feature:
+        case 'SIFT':
+            compute_feature = compute_features_sift
+        case 'ORB':
+            compute_feature = compute_features_orb
+        case _:
+            compute_feature = compute_features_sift
+    for mask in masks:
+        gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        gray_img = cv.GaussianBlur(gray_img, (5, 5), 0)
 
-    return FileVideoStream(args["video"], queue_size=128).start()
+        kp, des = compute_feature(gray_img)
+
+        dst = match_flann(des, mask.des, kp, mask.kp, mask.box, 20)
+        return dst  # TODO: Support for list of masks -> return best match
+    return img
 
 
-def webcam_handler():
-    return WebcamVideoStream(src=0).start()
+if __name__ == "__main__":
+    import rendering
+    import detector
 
-
-def main():
+    mask = '../masks/mask_Hauptgebaeude_no_tree.jpg'
+    input = '../imgs/VID_20230612_172955.mp4'
 
     compute_feature = compute_features_sift
-    file = '../masks/mask_Hauptgebaeude_no_tree.jpg'
 
-    # vid_stream(file)
-    # return
+    img_mask, gray_mask = utils.load_img(mask)
+    kp_mask, des_mask = compute_feature(img_mask)
+    masks = [Mask(kp_mask, des_mask, img_mask.shape[:2])]
 
-    img2, gray2 = load_img(file, (600, 800))
-    kp2, des2 = compute_feature(gray2)
+    if type(input) is int:
+        fvs = utils.webcam_handler()  #
+    else:
+        fvs = utils.vid_handler(input)
 
-    file = '../imgs/VID_20230612_172955.mp4'
-
-    fvs = vid_handler(file)  # webcam_handler()  #
-    count = 0
     fps = FPS().start()
     fps.update()
 
@@ -185,49 +142,26 @@ def main():
         # grab the frame from the threaded video file stream, resize
         # it, and convert it to grayscale (while still retaining 3
         # channels)
+        time_start = time.time()
 
         frame = fvs.read()
         if frame is None:
             break
-        #
-        frame = imutils.resize(frame, width=450)
-        # frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        # frame = np.dstack([frame, frame, frame])
+        frame = utils.resize(frame, width=450)
 
-        boxes, labels, scores = run_detector(frame)
+        target = frame.copy()
 
-        gray = np.float32(cv.cvtColor(frame, cv.COLOR_BGR2GRAY))
-        gray = cv.GaussianBlur(gray, (5, 5), 0)
+        boxes, labels, scores = detector.run_detector(frame)
+        hit, box = detector.filter_hits(boxes, labels, scores)
+        # TODO: Filter + Crop boxes
+        if hit:
+            dst = match(frame, masks)
 
-        kp, des = compute_feature(gray)
+            if dst is not None:  # 0.1 * float(len(kp_mask)):
+                target = rendering.render_contours(target, [np.int32(dst)])
 
-        dst = match_flann(des, des2, kp, kp2, gray, gray2, 20)
-        #matches_pts = get_points_from_matched_keypoints(kp2, matches)
-        img_n = np.copy(frame)
-
-        #boundRect = bounding_box(matches_pts)
-        #cv.rectangle(img_n, (int(boundRect[0]), int(boundRect[1])), (int(boundRect[2]), int(boundRect[3])), (0, 255, 0), 2)
-        #x = dst[0, 0, 0]
-        #cv.rectangle(img_n, (int(dst[0, 0, 0]), int(dst[1, 0, 0])), (int(dst[2, 0, 0]), int(dst[3, 0, 0])) , (0, 255, 0), 2)
-        # img_n = rd.render_contours(img_n, [convex_hull(matches_pts)])
-
-
-        if not dst is None:  # 0.1 * float(len(kp2)):
-            # img_n = rd.render_matches(img_n, kp, img2, kp2, matches)
-            target = img_n
-            # boundRect = bounding_box(dst)
-            # cv.rectangle(target, (int(boundRect[0]), int(boundRect[1])), (int(boundRect[2]), int(boundRect[3])),
-            #              (0, 255, 0), 2)
-            # # target = rd.render_contours(target, bounding_box(dst))
-            target = rd.render_contours(target, [np.int32(dst)])
-            # cv.polylines(img_n, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
-        else:
-            target = frame
-
-
-        # END rendering pipeline
-        cv.putText(target, "approx. FPS: {:.2f}".format(fps._numFrames / ((datetime.datetime.now() - fps._start).total_seconds())), (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
         # show the frame and update the FPS counter
+        rendering.render_text(target, "approx. FPS: {:.2f}".format(1.0 / (time.time() - time_start)))
 
         # display the size of the queue on the frame
         cv.imshow('frame', target)
@@ -242,69 +176,3 @@ def main():
     cv.destroyAllWindows()
     fvs.stop()
 
-
-
-
-
-
-
-
-
-
-    # while vid.isOpened():
-    #
-    #     ret, frame = vid.read()
-    #
-    #     if not frame is None:
-    #         size = (600, 600)
-    #         frame = resize_img(frame, size)
-    #
-    #         gray = np.float32(cv.cvtColor(frame, cv.COLOR_BGR2GRAY))
-    #         gray = cv.GaussianBlur(gray, (5, 5), 0)
-
-    #         kp, des = compute_feature(gray)
-    #
-    #         matches = match_brute_force(des, des2)
-    #
-    #         matches_pts = get_points_from_matched_keypoints(kp, matches)
-    #         img_n = np.copy(frame)
-    #
-    #         #img_n = rd.render_matches(img_n, kp, img2, kp2, matches)
-    #
-    #         boundRect = bounding_box(matches_pts)
-    #         # cv.rectangle(img_n, (int(boundRect[0]), int(boundRect[1])), (int(boundRect[2]), int(boundRect[3])), (0, 255, 0), 2)
-    #         img_n = rd.render_contours(img_n, [convex_hull(matches_pts)])
-    #
-    #         if len(matches) > 60:  # 0.1 * float(len(kp2)):
-    #             cv.imshow('frame', img_n)
-    #         else:
-    #             cv.imshow('frame', frame)
-    #
-    #         count = count + 1
-    #     if cv.waitKey(10) & 0xFF == ord('q'):
-    #         break
-    #
-    # vid.release()
-    # cv.destroyAllWindows()
-
-    return
-
-    # compute_feature = compute_features_sift
-    #
-    # kp, des = compute_feature(img)
-    # kp2, des2 = compute_feature(img2)
-    #
-    # # img3 = cv.drawKeypoints(img, kp, None, color=(0, 255, 0), flags=4)  # DRAW_RICH_KEYPOINTS = 4
-    # # cv.imshow('orb', img3)
-    #
-    # # img4 = cv.drawKeypoints(img2, kp, None, color=(0, 255, 0), flags=4)  # DRAW_RICH_KEYPOINTS = 4
-    # # cv.imshow('orb2', img4)
-    #
-    # match_flann(des, des2, img, img2, kp, kp2)
-    # # match_brute_force(des, des2, img, img2, kp, kp2)
-    #
-    # if cv.waitKey(0) & 0xff == 27:
-    #     cv.destroyAllWindows()
-
-
-main()
