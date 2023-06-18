@@ -39,15 +39,19 @@ def macaw():
         frame = utils.resize(frame, width=450)
 
         boxes, labels, scores = detector.run_detector(frame)  # , showHits=True  # TODO: Do RGB channels nbeed to be swapped? rgb->bgr?
-        hit, box = detector.filter_hits(boxes, labels, scores)
+        hit, label, box = detector.filter_hits(boxes, labels, scores)
         # TODO: Filter + Crop boxes
         if hit:
-            cropped = utils.crop_img(frame, *box)  # Test cropping and apply
-            dst = feature_matching.match(frame, masks)
+            box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int)
+            cropped = utils.crop_img(frame, *box_pixel.flatten())  # Test cropping and apply
 
-            if dst is not None:  # 0.1 * float(len(kp_mask)):
-                frame = rendering.render_contours(frame, [np.int32(dst)])
-                # TODO: Render meta data
+            if np.all(np.array(cropped.shape) > 0):
+                rendering.display_image(cropped)
+                dst = feature_matching.match(cropped, masks)
+
+                if dst is not None:
+                    frame = rendering.render_contours(frame, [np.int32(dst)])
+                    # TODO: Render meta data
 
         # show the frame and update the FPS counter
         rendering.render_text(frame, "FPS: {:.2f}".format(1.0 / (time.time() - time_start)))

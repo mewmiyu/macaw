@@ -52,9 +52,8 @@ def load_img(filename: str, size: tuple = None) -> tuple[np.ndarray, np.ndarray]
     return img, gray
 
 
-def crop_img(img: np.ndarray, min_: np.ndarray, max_: np.ndarray) -> np.ndarray:
-    # TODO: Test
-    return img[min_[0]:max_[0], min_[1]:max_[1], :]
+def crop_img(img: np.ndarray, min_y: int, min_x: int, max_y: int, max_x: int) -> np.ndarray:
+    return img[min_x:max_x, min_y:max_y, :]
 
 
 def resize(img, width):

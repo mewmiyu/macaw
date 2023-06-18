@@ -59,9 +59,20 @@ def run_detector(img_in, detector=None, showHits = False):
 
 
 # returns if there is a hit and its bounding box (Min, Max) - pixel
-def filter_hits(boxes, labels, scores) -> (bool, list[list[int, 2], list[int, 2]]):
+def filter_hits(boxes, labels, scores) -> (bool, str, np.ndarray((2, 2))):
+    target = "Building"
     # TODO: Implement hit filtering
-    return True, ((0, 0), (0, 0))
+    hit_positions = np.argwhere(np.asarray(labels) == target).flatten()  # TODO: Labels
+    if len(hit_positions) == 0:
+        return False, "NO_HIT", np.array(((0, 0), (0, 0)))
+
+    hit_boxes = boxes[hit_positions, :]
+
+    hit_labels = np.asarray(labels)[hit_positions]
+    hit_scores = scores[hit_positions]
+    hit_best = np.argmax(hit_scores)
+
+    return True, hit_labels[hit_best], hit_boxes[hit_best].reshape((2, 2))
 
 
 if __name__ == "__main__":
