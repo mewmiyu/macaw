@@ -6,4 +6,3 @@ TRAINING:
     STEPS_PER_EPOCH: 150
   DEVICE: "cuda"
 METHOD: "train"
-  
