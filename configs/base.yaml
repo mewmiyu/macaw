@@ -4,5 +4,5 @@ TRAINING:
     BATCH_SIZE: 64
     EPOCHS: 20
     STEPS_PER_EPOCH: 150
-  DEVICE: "cuda"
-METHOD: "train"
+  DEVICE: "cpu"
+METHOD: "labeling"

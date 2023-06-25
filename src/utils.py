@@ -73,6 +73,7 @@ def to_grayscale(img):
 def load_data(path_to_data):
     labels = []
     images = []
+    filenames = []
     label = -1
     subdir = ''
     for subdirs, _, files in os.walk(path_to_data):
@@ -83,17 +84,17 @@ def load_data(path_to_data):
                     subdir = subdirs
                 image = Image.open(os.path.join(subdirs, file))
                 preprocess = transforms.Compose([
-                    transforms.Resize(299),
-                    transforms.CenterCrop(299),
-                    transforms.ToTensor(),
-                    transforms.Normalize(-127.5, 127.5)
+                    #transforms.Resize(299),
+                    #transforms.CenterCrop(299),
+                    transforms.ToTensor()
                 ])
-                input_tensor = preprocess(image).to('cuda')
-                if(input_tensor.shape != (3,299,299)):
-                    continue
+                input_tensor = preprocess(image).to('cpu')
+                #if(input_tensor.shape != (3,299,299)):
+                #    continue
                 labels.append(label)
                 images.append(input_tensor)
-    return images, np.array(labels)
+                filenames.append(file)
+    return images, np.array(labels), filenames
 
 """
     This function generates a dataset based on triplets. It returns

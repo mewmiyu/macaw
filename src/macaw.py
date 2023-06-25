@@ -1,6 +1,7 @@
 import sys
 
 import methods.train as train
+import methods.labeling as labeling
 import utils
 import feature_matching
 import detector
@@ -67,7 +68,7 @@ def macaw():
 
 
 if __name__ == '__main__':
-    macaw()
+    #macaw()
 
     if (len(sys.argv)) != 2:
         print("Failed to load config file.")
@@ -78,6 +79,9 @@ if __name__ == '__main__':
             train.train(cnfg)
         case 'execute':
             macaw()
+        case 'labeling':
+            labeler = labeling.Labeler()
+            labeler.labeling()
         case _:
             print(f"Unknown method: {cnfg['METHOD']}. Please use one of the following: train")
             exit(-1)
