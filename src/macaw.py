@@ -1,3 +1,4 @@
+import argparse
 import sys
 
 import methods.train as train
@@ -14,8 +15,8 @@ import time
 
 def macaw():
     # Config:  # TODO: Outsource to base.yaml
-    mask = '../masks/mask_Hauptgebaeude_no_tree.jpg'  # TODO: Adapt for multiple masks
-    input = '../imgs/VID_20230612_172955.mp4'  # 0  #
+    mask = "../masks/mask_Hauptgebaeude_no_tree.jpg"  # TODO: Adapt for multiple masks
+    input = "../imgs/VID_20230612_172955.mp4"  # 0  #
     compute_feature = feature_matching.compute_features_sift
 
     img_mask, gray_mask = utils.load_img(mask)
@@ -39,12 +40,16 @@ def macaw():
             break
         frame = utils.resize(frame, width=450)
 
-        boxes, labels, scores = detector.run_detector(frame)  # , showHits=True  # TODO: Do RGB channels nbeed to be swapped? rgb->bgr?
+        boxes, labels, scores = detector.run_detector(
+            frame
+        )  # , showHits=True  # TODO: Do RGB channels nbeed to be swapped? rgb->bgr?
         hit, label, box = detector.filter_hits(boxes, labels, scores)
         # TODO: Filter + Crop boxes
         if hit:
             box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int)
-            cropped = utils.crop_img(frame, *box_pixel.flatten())  # Test cropping and apply
+            cropped = utils.crop_img(
+                frame, *box_pixel.flatten()
+            )  # Test cropping and apply
 
             if np.all(np.array(cropped.shape) > 0):
                 rendering.display_image(cropped)
@@ -55,10 +60,12 @@ def macaw():
                     # TODO: Render meta data
 
         # show the frame and update the FPS counter
-        rendering.render_text(frame, "FPS: {:.2f}".format(1.0 / (time.time() - time_start)))
+        rendering.render_text(
+            frame, "FPS: {:.2f}".format(1.0 / (time.time() - time_start))
+        )
 
         # display the size of the queue on the frame
-        cv.imshow('frame', frame)
+        cv.imshow("frame", frame)
         cv.waitKey(1)
 
     # do a bit of cleanup
@@ -67,22 +74,27 @@ def macaw():
     return
 
 
-if __name__ == '__main__':
-    #macaw()
+if __name__ == "__main__":
+    # macaw()
 
-    if (len(sys.argv)) != 2:
+    parser = argparse.ArgumentParser("simple_example")
+    parser.add_argument("--config", help="The config file.")
+    args = parser.parse_args()
+    if "config" not in args:
         print("Failed to load config file.")
         exit(-1)
-    cnfg = utils.read_yaml(sys.argv[1])
-    match cnfg['METHOD']:
-        case 'train':
+    cnfg = utils.read_yaml(args.config)
+    match cnfg["METHOD"]:
+        case "train":
             train.train(cnfg)
-        case 'execute':
+        case "execute":
             macaw()
-        case 'labeling':
-            labeler = labeling.Labeler()
-            labeler.labeling()
+        case "labeling":
+            labeler = labeling.Labeler("data/annotations.json")
+            # We NEED to load all data, otherwise we won't have correct labels
+            labeler("data")
         case _:
-            print(f"Unknown method: {cnfg['METHOD']}. Please use one of the following: train")
+            print(
+                f"Unknown method: {cnfg['METHOD']}. Please use one of the following: train"
+            )
             exit(-1)
-

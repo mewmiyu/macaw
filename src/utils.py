@@ -1,4 +1,5 @@
 import os
+
 import torchvision.transforms as transforms
 import numpy as np
 import yaml
@@ -14,10 +15,10 @@ import cv2 as cv
 import pickle
 import imutils
 
+
 def vid_handler(file):
     ap = argparse.ArgumentParser()
-    ap.add_argument("-v", "--video", default=file,
-                    help="path to input video file")
+    ap.add_argument("-v", "--video", default=file, help="path to input video file")
     args = vars(ap.parse_args())
 
     return FileVideoStream(args["video"], queue_size=128).start()
@@ -52,7 +53,9 @@ def load_img(filename: str, size: tuple = None) -> tuple[np.ndarray, np.ndarray]
     return img, gray
 
 
-def crop_img(img: np.ndarray, min_y: int, min_x: int, max_y: int, max_x: int) -> np.ndarray:
+def crop_img(
+    img: np.ndarray, min_y: int, min_x: int, max_y: int, max_x: int
+) -> np.ndarray:
     return img[min_x:max_x, min_y:max_y, :]
 
 
@@ -64,73 +67,88 @@ def to_grayscale(img):
     return cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
 
-
-"""
-    This function loads all images from the data directory. 
+def load_data(path_to_data):
+    """
+    This function loads all images from the data directory.
     Each new directory creates a new label, so images from
     the same category should be in the same directory
-"""
-def load_data(path_to_data):
+    """
     labels = []
     images = []
     filenames = []
+    categories = []
     label = -1
-    subdir = ''
+    subdir = ""
     for subdirs, _, files in os.walk(path_to_data):
-        if(subdirs != 'data'):
+        if subdirs != "data":
             for file in files:
-                if(subdirs != subdir):
+                if file.lower() == ".ds_store":
+                    continue
+
+                if subdirs != subdir:
                     label += 1
                     subdir = subdirs
+
+                    category_parts = subdirs.lower().split("/")[-2:]
+                    supercategory = category_parts[0]
+                    category = "_".join(category_parts)
+                    categories.append(
+                        {"id": label, "name": category, "supercategory": supercategory}
+                    )
                 image = Image.open(os.path.join(subdirs, file))
-                preprocess = transforms.Compose([
-                    #transforms.Resize(299),
-                    #transforms.CenterCrop(299),
-                    transforms.ToTensor()
-                ])
-                input_tensor = preprocess(image).to('cpu')
-                #if(input_tensor.shape != (3,299,299)):
+
+                preprocess = transforms.Compose(
+                    [
+                        # transforms.Resize(299),
+                        # transforms.CenterCrop(299),
+                        transforms.ToTensor()
+                    ]
+                )
+                input_tensor = preprocess(image).to("cpu")
+                # if(input_tensor.shape != (3,299,299)):
                 #    continue
                 labels.append(label)
                 images.append(input_tensor)
                 filenames.append(file)
-    return images, np.array(labels), filenames
+    return images, np.array(labels), filenames, categories
 
-"""
+
+def gen_triplet_dataset(labels, batch_size, batch_amount):
+    """
     This function generates a dataset based on triplets. It returns
-    a numpy array of size [batch_amount, batch_size, 3]. Each entry 
+    a numpy array of size [batch_amount, batch_size, 3]. Each entry
     is an index describing the position of the data based on the
     labels input
-"""
-def gen_triplet_dataset(labels, batch_size, batch_amount):
+    """
     dataset = []
     max_label = np.max(labels)
     for _ in range(batch_amount):
         batch = []
         for b in range(batch_size):
-            label1 = np.random.randint(0, max_label+1)
-            label2 = np.random.randint(0, max_label+1)
+            label1 = np.random.randint(0, max_label + 1)
+            label2 = np.random.randint(0, max_label + 1)
             while label1 == label2:
-                label2 = np.random.randint(0, max_label+1)
+                label2 = np.random.randint(0, max_label + 1)
             label1_pos = np.where(labels == label1)
             l1_min = np.min(label1_pos)
             l1_max = np.max(label1_pos)
             label2_pos = np.where(labels == label2)
             l2_min = np.min(label2_pos)
             l2_max = np.max(label2_pos)
-            anchor = np.random.randint(l1_min, l1_max+1)
-            positive = np.random.randint(l1_min, l1_max+1)
+            anchor = np.random.randint(l1_min, l1_max + 1)
+            positive = np.random.randint(l1_min, l1_max + 1)
             while positive == anchor and l1_min != l1_max:
-                positive = np.random.randint(l1_min, l1_max+1)
-            negative = np.random.randint(l2_min, l2_max+1)
+                positive = np.random.randint(l1_min, l1_max + 1)
+            negative = np.random.randint(l2_min, l2_max + 1)
             batch.append([anchor, positive, negative])
         dataset.append(np.array(batch))
     return np.array(dataset)
 
-"""
-    Reads in a yaml config file from a filepath
-"""
+
 def read_yaml(filepath):
-    with open(filepath, 'r') as file:
+    """
+    Reads in a yaml config file from a filepath
+    """
+    with open(filepath, "r") as file:
         data = yaml.safe_load(file)
     return data

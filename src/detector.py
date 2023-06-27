@@ -6,8 +6,10 @@ import rendering
 
 import tempfile
 
+from numpy.typing import NDArray
 from PIL import Image
 from PIL import ImageOps
+from typing import Tuple
 
 module_handle = "https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1"  # @param ["https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1", "https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1"]
 detector_ = hub.load(module_handle).signatures["default"]
@@ -17,8 +19,7 @@ def get_label_string(label, score):
     return "{}: {}%".format(label.decode("ascii"), int(100 * score))
 
 
-def run_detector(img_in, detector=None, showHits = False):
-
+def run_detector(img_in, detector=None, showHits=False):
     if detector is None:
         detector = detector_
 
@@ -59,7 +60,7 @@ def run_detector(img_in, detector=None, showHits = False):
 
 
 # returns if there is a hit and its bounding box (Min, Max) - pixel
-def filter_hits(boxes, labels, scores) -> (bool, str, np.ndarray((2, 2))):
+def filter_hits(boxes, labels, scores) -> Tuple[bool, str, NDArray]:
     target = "Building"
     # TODO: Implement hit filtering
     hit_positions = np.argwhere(np.asarray(labels) == target).flatten()  # TODO: Labels
@@ -76,6 +77,7 @@ def filter_hits(boxes, labels, scores) -> (bool, str, np.ndarray((2, 2))):
 
 
 if __name__ == "__main__":
+
     def download_and_resize_image(url, new_width=256, new_height=256):
         _, filename = tempfile.mkstemp(suffix=".jpg")
         # response = urlopen(url)
@@ -89,14 +91,15 @@ if __name__ == "__main__":
 
         return filename
 
-
     def load_img(path):
         img = tf.io.read_file(path)
         img = tf.image.decode_jpeg(img, channels=3)
         return img
 
-
     # By Heiko Gorski, Source: https://commons.wikimedia.org/wiki/File:Naxos_Taverna.jpg
-    image_url = ("https://upload.wikimedia.org/wikipedia/commons/6/60/Naxos_Taverna.jpg")
-    downloaded_image_path = download_and_resize_image("../imgs/Untitled123.jpg", 1280, 856)
+    image_url = "https://upload.wikimedia.org/wikipedia/commons/6/60/Naxos_Taverna.jpg"
+    downloaded_image_path = download_and_resize_image(
+        "../imgs/Untitled123.jpg", 1280, 856
+    )
     boxes, labels, scores = run_detector(load_img(downloaded_image_path), showHits=True)
+    print()
