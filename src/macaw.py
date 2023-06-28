@@ -84,7 +84,7 @@ if __name__ == "__main__":
         print("Failed to load config file.")
         exit(-1)
     cnfg = utils.read_yaml(args.config)
-    match cnfg["METHOD"]:
+    match cnfg["METHOD"]["NAME"]:
         case "train":
             train.train(cnfg)
         case "execute":
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         case "labeling":
             labeler = labeling.Labeler("data/annotations.json")
             # We NEED to load all data, otherwise we won't have correct labels
-            labeler("data")
+            labeler("data", cnfg["METHOD"]["MODE"])
         case _:
             print(
                 f"Unknown method: {cnfg['METHOD']}. Please use one of the following: train"
