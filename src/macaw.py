@@ -90,7 +90,7 @@ if __name__ == "__main__":
         case "execute":
             macaw()
         case "labeling":
-            labeler = labeling.Labeler("data/annotations.json")
+            labeler = labeling.Labeler("annotations.json")
             # We NEED to load all data, otherwise we won't have correct labels
             labeler("data", cnfg["METHOD"]["MODE"])
         case _:

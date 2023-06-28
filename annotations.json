@@ -1,0 +1,551 @@
+{
+    "categories": [
+        {
+            "id": 0,
+            "name": "hauptgeb\u00e4ude_right",
+            "supercategory": "hauptgeb\u00e4ude"
+        },
+        {
+            "id": 1,
+            "name": "hauptgeb\u00e4ude_back",
+            "supercategory": "hauptgeb\u00e4ude"
+        },
+        {
+            "id": 2,
+            "name": "hauptgeb\u00e4ude_left",
+            "supercategory": "hauptgeb\u00e4ude"
+        },
+        {
+            "id": 3,
+            "name": "hauptgeb\u00e4ude_front",
+            "supercategory": "hauptgeb\u00e4ude"
+        },
+        {
+            "id": 4,
+            "name": "mensa_right",
+            "supercategory": "mensa"
+        },
+        {
+            "id": 5,
+            "name": "mensa_front",
+            "supercategory": "mensa"
+        },
+        {
+            "id": 6,
+            "name": "maschinenhaus_right",
+            "supercategory": "maschinenhaus"
+        },
+        {
+            "id": 7,
+            "name": "maschinenhaus_back",
+            "supercategory": "maschinenhaus"
+        },
+        {
+            "id": 8,
+            "name": "maschinenhaus_left",
+            "supercategory": "maschinenhaus"
+        },
+        {
+            "id": 9,
+            "name": "maschinenhaus_front",
+            "supercategory": "maschinenhaus"
+        },
+        {
+            "id": 10,
+            "name": "hexagon_right",
+            "supercategory": "hexagon"
+        },
+        {
+            "id": 11,
+            "name": "hexagon_left",
+            "supercategory": "hexagon"
+        },
+        {
+            "id": 12,
+            "name": "hexagon_front",
+            "supercategory": "hexagon"
+        },
+        {
+            "id": 13,
+            "name": "darmstadium_right",
+            "supercategory": "darmstadium"
+        },
+        {
+            "id": 14,
+            "name": "darmstadium_back",
+            "supercategory": "darmstadium"
+        },
+        {
+            "id": 15,
+            "name": "darmstadium_left",
+            "supercategory": "darmstadium"
+        },
+        {
+            "id": 16,
+            "name": "darmstadium_front",
+            "supercategory": "darmstadium"
+        },
+        {
+            "id": 17,
+            "name": "igd_fraunhofer_right",
+            "supercategory": "igd_fraunhofer"
+        },
+        {
+            "id": 18,
+            "name": "igd_fraunhofer_back",
+            "supercategory": "igd_fraunhofer"
+        },
+        {
+            "id": 19,
+            "name": "igd_fraunhofer_left",
+            "supercategory": "igd_fraunhofer"
+        },
+        {
+            "id": 20,
+            "name": "igd_fraunhofer_front",
+            "supercategory": "igd_fraunhofer"
+        },
+        {
+            "id": 21,
+            "name": "ulb_right",
+            "supercategory": "ulb"
+        },
+        {
+            "id": 22,
+            "name": "ulb_back",
+            "supercategory": "ulb"
+        },
+        {
+            "id": 23,
+            "name": "ulb_left",
+            "supercategory": "ulb"
+        },
+        {
+            "id": 24,
+            "name": "ulb_front",
+            "supercategory": "ulb"
+        },
+        {
+            "id": 25,
+            "name": "karo5_right",
+            "supercategory": "karo5"
+        },
+        {
+            "id": 26,
+            "name": "karo5_back",
+            "supercategory": "karo5"
+        },
+        {
+            "id": 27,
+            "name": "karo5_left",
+            "supercategory": "karo5"
+        },
+        {
+            "id": 28,
+            "name": "karo5_front",
+            "supercategory": "karo5"
+        },
+        {
+            "id": 29,
+            "name": "piloty_right",
+            "supercategory": "piloty"
+        },
+        {
+            "id": 30,
+            "name": "piloty_back",
+            "supercategory": "piloty"
+        },
+        {
+            "id": 31,
+            "name": "piloty_left",
+            "supercategory": "piloty"
+        },
+        {
+            "id": 32,
+            "name": "piloty_front",
+            "supercategory": "piloty"
+        }
+    ],
+    "images": [
+        {
+            "id": 0,
+            "file_name": "IMG_20230522_133619.jpg",
+            "height": 3000,
+            "width": 4000
+        },
+        {
+            "id": 1,
+            "file_name": "20230504_122351.jpg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 2,
+            "file_name": "20230522_113535473_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 3,
+            "file_name": "IMG_3009.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 4,
+            "file_name": "20230522_133512.jpg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 5,
+            "file_name": "20230504_122409.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 6,
+            "file_name": "IMG_3005.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 7,
+            "file_name": "IMG_2993.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 8,
+            "file_name": "IMG_3004.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 9,
+            "file_name": "20230522_113534505_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 10,
+            "file_name": "IMG_3008.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 11,
+            "file_name": "IMG_20230522_133621.jpg",
+            "height": 3000,
+            "width": 4000
+        },
+        {
+            "id": 12,
+            "file_name": "20230522_113505080_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 13,
+            "file_name": "IMG_3003.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 14,
+            "file_name": "IMG_2995.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 15,
+            "file_name": "IMG_2999.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 16,
+            "file_name": "IMG_2998.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 17,
+            "file_name": "20230522_113537675_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 18,
+            "file_name": "20230522_112005021_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 19,
+            "file_name": "IMG_2994.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 20,
+            "file_name": "IMG_3002.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 21,
+            "file_name": "IMG_20230519_140416.jpg",
+            "height": 3000,
+            "width": 4000
+        },
+        {
+            "id": 22,
+            "file_name": "IMG_2997.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 23,
+            "file_name": "20230522_113605360_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 24,
+            "file_name": "IMG_3001.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 25,
+            "file_name": "IMG_20230522_133510.jpg",
+            "height": 3000,
+            "width": 4000
+        },
+        {
+            "id": 26,
+            "file_name": "20230522_133553.jpg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 27,
+            "file_name": "20230522_112001318_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 28,
+            "file_name": "20230522_113505580_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 29,
+            "file_name": "20230522_113606127_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 30,
+            "file_name": "20230522_113506681_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 31,
+            "file_name": "IMG_20230519_140422.jpg",
+            "height": 3000,
+            "width": 4000
+        },
+        {
+            "id": 32,
+            "file_name": "IMG_2996.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 33,
+            "file_name": "20230522_133524.jpg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 34,
+            "file_name": "IMG_3007.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 35,
+            "file_name": "IMG_3102.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 36,
+            "file_name": "IMG_3010.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 37,
+            "file_name": "IMG_3006.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 38,
+            "file_name": "20230504_122348.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 39,
+            "file_name": "20230522_113504379_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        },
+        {
+            "id": 40,
+            "file_name": "IMG_2966.jpeg",
+            "height": 3024,
+            "width": 4032
+        },
+        {
+            "id": 41,
+            "file_name": "20230522_113833859_iOS.jpg",
+            "height": 4032,
+            "width": 3024
+        }
+    ],
+    "annotations": [
+        {
+            "id": 0,
+            "image_id": 0,
+            "category_id": 0,
+            "bbox": [
+                0,
+                0.14516129032290337,
+                3207.241935483871,
+                2998.7096774193546
+            ],
+            "area": 9617587.429760667,
+            "segmentation": [],
+            "iscrowd": 0
+        },
+        {
+            "id": 1,
+            "image_id": 1,
+            "category_id": 0,
+            "bbox": [
+                0,
+                46.9735483870968,
+                4031.5,
+                2975.8761290322577
+            ],
+            "area": 11997244.614193548,
+            "segmentation": [],
+            "iscrowd": 0
+        },
+        {
+            "id": 2,
+            "image_id": 3,
+            "category_id": 0,
+            "bbox": [
+                0,
+                0.15032258064502457,
+                3552.862580645161,
+                2726.1522580645164
+            ],
+            "area": 9685644.34681873,
+            "segmentation": [],
+            "iscrowd": 0
+        },
+        {
+            "id": 8,
+            "image_id": 4,
+            "category_id": 0,
+            "bbox": [
+                1081.6367741935483,
+                457.97741935483873,
+                2185.083870967742,
+                1771.4787096774194
+            ],
+            "area": 3870829.556278876,
+            "segmentation": [],
+            "iscrowd": 0
+        },
+        {
+            "id": 4,
+            "image_id": 5,
+            "category_id": 0,
+            "bbox": [
+                0.8090909090910827,
+                0,
+                2285.672727272727,
+                2876.8818181818183
+            ],
+            "area": 6575610.311404958,
+            "segmentation": [],
+            "iscrowd": 0
+        },
+        {
+            "id": 7,
+            "image_id": 2,
+            "category_id": 0,
+            "bbox": [
+                602.9909090909091,
+                617.3909090909092,
+                2351.1272727272726,
+                1330.0363636363636
+            ],
+            "area": 3127084.7682644627,
+            "segmentation": [],
+            "iscrowd": 0
+        },
+        {
+            "id": 6,
+            "image_id": 41,
+            "category_id": 1,
+            "bbox": [
+                508.73636363636365,
+                326.772727272727,
+                2513.454545454545,
+                2741.236363636364
+            ],
+            "area": 6889972.998347107,
+            "segmentation": [],
+            "iscrowd": 0
+        },
+        {
+            "id": 9,
+            "image_id": 7,
+            "category_id": 0,
+            "bbox": [
+                0,
+                0.15032258064502457,
+                3786.978709677419,
+                3022.6993548387095
+            ],
+            "area": 11446898.102529863,
+            "segmentation": [],
+            "iscrowd": 0
+        },
+        {
+            "id": 10,
+            "image_id": 8,
+            "category_id": 0,
+            "bbox": [
+                2.1012903225806667,
+                0.15032258064502457,
+                3095.5354838709677,
+                3022.6993548387095
+            ],
+            "area": 9356873.109977106,
+            "segmentation": [],
+            "iscrowd": 0
+        }
+    ]
+}
