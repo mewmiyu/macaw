@@ -54,7 +54,7 @@ def macaw():
             uframe = cv.UMat(cropped)  # cropped #
 
             # rendering.display_image(cropped)
-            dst = features.match(frame, masks)
+            dst = features.match(cropped, masks)
 
             if dst is not None:
                 frame = rendering.render_contours(frame, [np.int32(dst)])

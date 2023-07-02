@@ -60,11 +60,8 @@ def get_points_from_matched_keypoints(kp, matches):
 def bounding_box(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
     br = cv.boundingRect(np.array(pts, dtype='int32').reshape((-1, 2)))
     return np.array([[[br[0], br[1]]], [[br[2], br[1]]],[[br[2], br[3]]], [[br[0], br[3]]]])
-    # cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
-
 
 def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
-    # cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
     return cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
 
 
@@ -85,8 +82,8 @@ def match_flann(des, des2, kp, kp2, mask_shape, MATCHING_THRESHOLD=20):
 
 
 def estimate_homography(pts_src, points_st):
-    m, _ = cv.findHomography(pts_src, points_st, cv.RANSAC, 5.0)  # returns M, mask
-    return 1
+    m, mask = cv.findHomography(pts_src, points_st, cv.RANSAC, 5.0)  # returns M, mask
+    return m, mask
 
 
 def match(img, masks: list[Mask], use_feature='SIFT', MATCHING_THRESHOLD=10):
@@ -97,9 +94,10 @@ def match(img, masks: list[Mask], use_feature='SIFT', MATCHING_THRESHOLD=10):
             compute_feature = compute_features_sift
         case _:
             compute_feature = compute_features_sift
+
     for mask in masks:
         gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-        gray_img = cv.GaussianBlur(gray_img, (15, 15), 0)
+        gray_img = cv.GaussianBlur(gray_img, (5, 5), 0)
 
         kp, des = compute_feature(gray_img)
 
@@ -115,12 +113,12 @@ def match(img, masks: list[Mask], use_feature='SIFT', MATCHING_THRESHOLD=10):
 
         # With enough matches: Estimate Homography
         if len(matches_accepted) > 2 * MATCHING_THRESHOLD:
-            m, _ = estimate_homography(src_pts, mask_pts)
+            m, msk = estimate_homography(src_pts, mask_pts)
             dst = cv.perspectiveTransform(mask.box_points, np.linalg.pinv(m))
             return dst
         # With slightly fewer hits: Fit bounding box
         if len(matches_accepted) > MATCHING_THRESHOLD:
-            return bounding_box(src_pts)
+            return bounding_box(mask_pts)
         # Else: No matches
         return None  # TODO: Support for list of masks -> return best match
 
@@ -129,65 +127,4 @@ def track(img_old, img_new, pts_old):
     pts_new = []
     pts_new, st, err = cv.calcOpticalFlowPyrLK(img_old, img_new, pts_old, None, minEigThreshold=0.1)
     return 1
-
-
-# if __name__ == "__main__":
-#     import rendering
-#     import detector
-#
-#     mask = '../masks/mask_Hauptgebaeude_no_tree.jpg'
-#     input = '../imgs/VID_20230612_172955.mp4'
-#
-#     compute_feature = compute_features_sift
-#
-#     img_mask, gray_mask = utils.load_img(mask)
-#     kp_mask, des_mask = compute_feature(img_mask)
-#     masks = [Mask(kp_mask, des_mask, img_mask.shape[:2])]
-#
-#     if type(input) is int:
-#         fvs = utils.webcam_handler()  #
-#     else:
-#         fvs = utils.vid_handler(input)
-#
-#     fps = FPS().start()
-#     fps.update()
-#
-#     # loop over frames from the video file stream
-#     while True:  # fvs.more():
-#         # grab the frame from the threaded video file stream, resize
-#         # it, and convert it to grayscale (while still retaining 3
-#         # channels)
-#         time_start = time.time()
-#
-#         frame = fvs.read()
-#         if frame is None:
-#             break
-#         frame = utils.resize(frame, width=450)
-#
-#         target = frame.copy()
-#
-#         boxes, labels, scores = detector.run_detector(frame)
-#         hit, box = detector.filter_hits(boxes, labels, scores)
-#         # TODO: Filter + Crop boxes
-#         if hit:
-#             dst = match(frame, masks)
-#
-#             if dst is not None:  # 0.1 * float(len(kp_mask)):
-#                 target = rendering.render_contours(target, [np.int32(dst)])
-#
-#         # show the frame and update the FPS counter
-#         rendering.render_text(target, "approx. FPS: {:.2f}".format(1.0 / (time.time() - time_start)))
-#
-#         # display the size of the queue on the frame
-#         cv.imshow('frame', target)
-#         cv.waitKey(1)
-#         fps.update()
-#
-#     # stop the timer and display FPS information
-#     fps.stop()
-#     print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
-#     print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
-#     # do a bit of cleanup
-#     cv.destroyAllWindows()
-#     fvs.stop()
 
