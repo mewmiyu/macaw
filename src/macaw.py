@@ -59,20 +59,21 @@ def macaw():
             break
 
         frame = utils.resize(frame, width=450)
+        frame_umat = cv.UMat(frame)
         frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        frame_gray = cv.GaussianBlur(frame_gray, (5, 5), 0)
+        frame_gray = cv.UMat(cv.GaussianBlur(frame_gray, (5, 5), 0))
 
         kp, des = compute_feature(frame_gray)
 
-        boxes, labels, scores = detector.run_detector(frame)  # , showHits=True  # TODO: Do RGB channels nbeed to be swapped? rgb->bgr?
-        hit, label, box = detector.filter_hits(boxes, labels, scores)
-        # TODO: Filter + Crop boxes
-        box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int).flatten()
-        if hit and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0:  # hit and non-zero patch
-            cropped = utils.crop_img(frame, *box_pixel.flatten())  # Test cropping and apply
+        # boxes, labels, scores = detector.run_detector(frame)  # , showHits=True  # TODO: Do RGB channels nbeed to be swapped? rgb->bgr?
+        # hit, label, box = detector.filter_hits(boxes, labels, scores)
+        # # TODO: Filter + Crop boxes
+        # box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int).flatten()
+        if True:  # hit and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0:  # hit and non-zero patch
+            # cropped = utils.crop_img(frame, *box_pixel.flatten())  # Test cropping and apply
             valid = False
             # tracking:
-            if count % matching_rate != 0 and pts_f is not None:
+            if count % matching_rate != 0 and pts_f is not None and len(pts_f) >0:
                 pts_f, pts_m, valid = features.track(last_frame_gray, frame_gray, pts_f, pts_m)
 
             # TODO: UMat
@@ -87,7 +88,7 @@ def macaw():
             # homography
             dst = features.calc_bounding_box(matches, masks[mask_id], pts_f, pts_m)
             if dst is not None:
-                frame = rendering.render_contours(frame, [np.int32(dst)])
+                frame = rendering.render_contours(frame_umat, [np.int32(dst)])
                 # TODO: Render meta data
 
         # show the frame and update the FPS counter

@@ -123,8 +123,8 @@ def track(img_old, img_new, pts_old, pts_mask_old):
     # img = np.zeros_like(img_old)
     valid = False  # Check if enough points are tracked
     if pts_new is not None:
-        good_new = pts_new[st[:, 0] == 1]
-        mask_new = pts_mask_old[st[:, 0] == 1]
+        good_new = pts_new.get()[st.get()[:, 0] == 1]
+        mask_new = pts_mask_old[st.get()[:, 0] == 1]
         # good_old = pts_old[st == 1]
         #
         # mask = np.zeros_like(img_old)
