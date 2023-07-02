@@ -39,8 +39,8 @@ def run_detector(img_in, detector=None, showHits = False):
     # ]
     # print(label_strings)
 
-    print("Found %d objects." % len(result["detection_scores"]))
-    print("Inference time: ", end_time - start_time)
+    # print("Found %d objects." % len(result["detection_scores"]))
+    # print("Inference time: ", end_time - start_time)
     if showHits:
         image_with_boxes = rendering.draw_boxes(
             img.numpy(),
@@ -66,11 +66,16 @@ def filter_hits(boxes, labels, scores) -> (bool, str, np.ndarray((2, 2))):
     if len(hit_positions) == 0:
         return False, "NO_HIT", np.array(((0, 0), (0, 0)))
 
+    def box_size(box):
+        return (box[2] - box[0]) * (box[3] - box[1])
+    boxes_size = np.array([box_size(b) for b in boxes])
+
     hit_boxes = boxes[hit_positions, :]
 
     hit_labels = np.asarray(labels)[hit_positions]
     hit_scores = scores[hit_positions]
-    hit_best = np.argmax(hit_scores)
+
+    hit_best = np.argmax(hit_scores)  # hit_scores
 
     return True, hit_labels[hit_best], hit_boxes[hit_best].reshape((2, 2))
 
