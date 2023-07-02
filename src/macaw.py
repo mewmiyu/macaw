@@ -73,7 +73,7 @@ def macaw():
             valid = False
             # tracking:
             if count % matching_rate != 0 and pts_f is not None:
-                pts_f, valid = features.track(last_frame_gray, frame_gray, pts_f)
+                pts_f, pts_m, valid = features.track(last_frame_gray, frame_gray, pts_f, pts_m)
 
             # TODO: UMat
             # uframe = cv.UMat(cropped)  # cropped #

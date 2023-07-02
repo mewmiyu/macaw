@@ -8,13 +8,16 @@ import utils
 from collections import namedtuple
 
 Mask = namedtuple("Mask", ["kp", "des", "box", "box_points"])
+TRACKING_THRESHOLD = 20
+MATCHING_THRESHOLD = 20
+MATCH_DISTANCE = 0.7
 
 
-def compute_features_sift(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:  #  -> tuple[cv.KeyPoint]
+def compute_features_sift(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:  # -> tuple[cv.KeyPoint]
     # SIFT: https://docs.opencv.org/4.x/da/df5/tutorial_py_sift_intro.html
 
     sift = cv.SIFT_create()
-    pic = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX) #.astype('uint8')  # cv.cvtColor(gray, cv.COLOR_BGR2GRAY)
+    pic = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX)  # .astype('uint8')  # cv.cvtColor(gray, cv.COLOR_BGR2GRAY)
     kp, des = sift.detectAndCompute(pic, None)
 
     return kp, des
@@ -57,7 +60,8 @@ def get_points_from_matched_keypoints(matches_accepted, kp, kp2):
 
 def bounding_box(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
     br = cv.boundingRect(np.array(pts, dtype='int32').reshape((-1, 2)))
-    return np.array([[[br[0], br[1]]], [[br[2], br[1]]],[[br[2], br[3]]], [[br[0], br[3]]]])
+    return np.array([[[br[0], br[1]]], [[br[2], br[1]]], [[br[2], br[3]]], [[br[0], br[3]]]])
+
 
 def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
     return cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
@@ -65,7 +69,6 @@ def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
 
 # https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
 def match_flann(des, des2):
-
     FLANN_INDEX_KDTREE = 1
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
     search_params = dict(checks=50)
@@ -74,7 +77,7 @@ def match_flann(des, des2):
     # store all the good matches as per Lowe's ratio test.
     matches_accepted = []
     for m, n in matches:
-        if m.distance < 0.7 * n.distance:
+        if m.distance < MATCH_DISTANCE * n.distance:
             matches_accepted.append(m)
     return matches_accepted
 
@@ -85,7 +88,6 @@ def estimate_homography(pts_src, points_st):
 
 
 def match(des, masks: list[Mask], use_feature='SIFT'):
-
     matches_best = None
     matches_best_nr = -1
     mask_id = -1
@@ -100,8 +102,7 @@ def match(des, masks: list[Mask], use_feature='SIFT'):
     return matches_best, mask_id  # TODO: Support for list of masks -> return best match
 
 
-
-def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts, MATCHING_THRESHOLD=20):
+def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts):
     # With enough matches: Estimate Homography
     if len(matches_accepted) > 2 * MATCHING_THRESHOLD:
         m, msk = estimate_homography(src_pts, mask_pts)
@@ -114,21 +115,23 @@ def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts, MATCHING_THRESH
     return None
 
 
-def track(img_old, img_new, pts_old):
+def track(img_old, img_new, pts_old, pts_mask_old):
     pts_new, st, err = cv.calcOpticalFlowPyrLK(img_old, img_new, pts_old, None, minEigThreshold=0.1)
     good_new = None
+    mask_new = None
     # good_old = []
     # img = np.zeros_like(img_old)
     valid = False  # Check if enough points are tracked
     if pts_new is not None:
-        good_new = pts_new[st == 1]
+        good_new = pts_new[st[:, 0] == 1]
+        mask_new = pts_mask_old[st[:, 0] == 1]
         # good_old = pts_old[st == 1]
         #
         # mask = np.zeros_like(img_old)
         # color = np.random.randint(0, 255, (100, 3))
 
         # draw the tracks
-        #for i, (new, old) in enumerate(zip(good_new, good_old)):
+        # for i, (new, old) in enumerate(zip(good_new, good_old)):
         #     a, b = new.ravel()
         #     c, d = old.ravel()
         #     mask = cv.line(mask, (int(a), int(b)), (int(c), int(d)), color[i].tolist(), 2)
@@ -137,7 +140,7 @@ def track(img_old, img_new, pts_old):
         #
         # cv.imshow('frame', img)
         # cv.waitKey(1)
-    
-    return good_new, valid
+    if len(good_new) >= TRACKING_THRESHOLD:
+        valid = True
 
-
+    return good_new, mask_new, valid
