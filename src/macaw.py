@@ -29,9 +29,22 @@ def macaw():
     else:
         fvs = utils.vid_handler(input)
 
-    last_frame = None  # gray  # cv.UMat((1, 1))
-    last_pts = None
+        match use_feature:
+            case 'ORB':
+                compute_feature = features.compute_features_orb
+            case 'SIFT':
+                compute_feature = features.compute_features_sift
+            case _:
+                compute_feature = features.compute_features_sift
+
+    last_frame_gray = None  # gray  # cv.UMat((1, 1))
+    pts_f = None
+    pts_m = None
+    mask_id = None
+    matches = None
+
     count = -1
+
     matching_rate = 10
     # loop over frames from the video file stream
     while True:  # fvs.more():
@@ -44,16 +57,8 @@ def macaw():
         frame = fvs.read()
         if frame is None:
             break
+
         frame = utils.resize(frame, width=450)
-
-        match use_feature:
-            case 'ORB':
-                compute_feature = features.compute_features_orb
-            case 'SIFT':
-                compute_feature = features.compute_features_sift
-            case _:
-                compute_feature = features.compute_features_sift
-
         frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         frame_gray = cv.GaussianBlur(frame_gray, (5, 5), 0)
 
@@ -65,18 +70,21 @@ def macaw():
         box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int).flatten()
         if hit and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0:  # hit and non-zero patch
             cropped = utils.crop_img(frame, *box_pixel.flatten())  # Test cropping and apply
-
+            valid = False
             # tracking:
-            if count % matching_rate == 0 and last_pts is not None:
-                pts_f, valid = features.track(last_frame, frame_gray, last_pts)
-            # generate umat img to (hopefully) spped up
+            if count % matching_rate != 0 and pts_f is not None:
+                pts_f, valid = features.track(last_frame_gray, frame_gray, pts_f)
+
             # TODO: UMat
-            uframe = cv.UMat(cropped)  # cropped #
+            # uframe = cv.UMat(cropped)  # cropped #
 
-            # rendering.display_image(cropped)
-            matches, mask_id = features.match(des, masks)
-            pts_f, pts_m = features.get_points_from_matched_keypoints(matches, kp, masks[mask_id].kp)
+            if not valid:
+                # rendering.display_image(cropped)
+                matches, mask_id = features.match(des, masks)
+                pts_f, pts_m = features.get_points_from_matched_keypoints(matches, kp, masks[mask_id].kp)
 
+            last_frame_gray = frame_gray
+            # homography
             dst = features.calc_bounding_box(matches, masks[mask_id], pts_f, pts_m)
             if dst is not None:
                 frame = rendering.render_contours(frame, [np.int32(dst)])

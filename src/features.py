@@ -85,18 +85,7 @@ def estimate_homography(pts_src, points_st):
 
 
 def match(des, masks: list[Mask], use_feature='SIFT'):
-    # match use_feature:
-    #     case 'ORB':
-    #         compute_feature = compute_features_orb
-    #     case 'SIFT':
-    #         compute_feature = compute_features_sift
-    #     case _:
-    #         compute_feature = compute_features_sift
-    #
-    # gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    # gray_img = cv.GaussianBlur(gray_img, (5, 5), 0)
-    #
-    # kp, des = compute_feature(gray_img)
+
     matches_best = None
     matches_best_nr = -1
     mask_id = -1
@@ -127,27 +116,28 @@ def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts, MATCHING_THRESH
 
 def track(img_old, img_new, pts_old):
     pts_new, st, err = cv.calcOpticalFlowPyrLK(img_old, img_new, pts_old, None, minEigThreshold=0.1)
-    good_new = []
-    good_old = []
-    img = []
-    valid = True  # Check if enough points are tracked
+    good_new = None
+    # good_old = []
+    # img = np.zeros_like(img_old)
+    valid = False  # Check if enough points are tracked
     if pts_new is not None:
         good_new = pts_new[st == 1]
-        good_old = pts_old[st == 1]
-
-        mask = np.zeros_like(img_old)
-        color = np.random.randint(0, 255, (100, 3))
+        # good_old = pts_old[st == 1]
+        #
+        # mask = np.zeros_like(img_old)
+        # color = np.random.randint(0, 255, (100, 3))
 
         # draw the tracks
-        for i, (new, old) in enumerate(zip(good_new, good_old)):
-            a, b = new.ravel()
-            c, d = old.ravel()
-            mask = cv.line(mask, (int(a), int(b)), (int(c), int(d)), color[i].tolist(), 2)
-            frame = cv.circle(img_old, (int(a), int(b)), 5, color[i].tolist(), -1)
-            img = cv.add(frame, mask)
-
-        cv.imshow('frame', img)
-        cv.waitKey(1)
+        #for i, (new, old) in enumerate(zip(good_new, good_old)):
+        #     a, b = new.ravel()
+        #     c, d = old.ravel()
+        #     mask = cv.line(mask, (int(a), int(b)), (int(c), int(d)), color[i].tolist(), 2)
+        #     frame = cv.circle(img_old, (int(a), int(b)), 5, color[i].tolist(), -1)
+        #     img = cv.add(frame, mask)
+        #
+        # cv.imshow('frame', img)
+        # cv.waitKey(1)
+    
     return good_new, valid
 
 
