@@ -49,12 +49,10 @@ def compute_features_orb(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:
     return kp, des
 
 
-def get_points_from_matched_keypoints(kp, matches):
-    pts = []
-    for m in matches:
-        p1 = kp[m.queryIdx].pt
-        pts.append(np.array(p1))
-    return pts
+def get_points_from_matched_keypoints(matches_accepted, kp, kp2):
+    pts1 = np.float32([kp[m.queryIdx].pt for m in matches_accepted]).reshape(-1, 1, 2)
+    pts2 = np.float32([kp2[m.trainIdx].pt for m in matches_accepted]).reshape(-1, 1, 2)
+    return pts1, pts2
 
 
 def bounding_box(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
@@ -66,7 +64,7 @@ def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
 
 
 # https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
-def match_flann(des, des2, kp, kp2, mask_shape, MATCHING_THRESHOLD=20):
+def match_flann(des, des2):
 
     FLANN_INDEX_KDTREE = 1
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
@@ -86,45 +84,70 @@ def estimate_homography(pts_src, points_st):
     return m, mask
 
 
-def match(img, masks: list[Mask], use_feature='SIFT', MATCHING_THRESHOLD=10):
-    match use_feature:
-        case 'ORB':
-            compute_feature = compute_features_orb
-        case 'SIFT':
-            compute_feature = compute_features_sift
-        case _:
-            compute_feature = compute_features_sift
+def match(des, masks: list[Mask], use_feature='SIFT'):
+    # match use_feature:
+    #     case 'ORB':
+    #         compute_feature = compute_features_orb
+    #     case 'SIFT':
+    #         compute_feature = compute_features_sift
+    #     case _:
+    #         compute_feature = compute_features_sift
+    #
+    # gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    # gray_img = cv.GaussianBlur(gray_img, (5, 5), 0)
+    #
+    # kp, des = compute_feature(gray_img)
+    matches_best = None
+    matches_best_nr = -1
+    mask_id = -1
+    for idx, mask in enumerate(masks):
+        matches_accepted = match_flann(des, mask.des)
 
-    for mask in masks:
-        gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-        gray_img = cv.GaussianBlur(gray_img, (5, 5), 0)
-
-        kp, des = compute_feature(gray_img)
-
-        matches_accepted = match_flann(des, mask.des, kp, mask.kp, mask.box)
+        if len(matches_accepted) > matches_best_nr:
+            matches_best = matches_accepted
+            matches_best_nr = len(matches_accepted)
+            mask_id = idx
         # return src_pts
-
-        # we map from the template to the destination
-        src_pts = np.float32([kp[m.queryIdx].pt for m in matches_accepted]).reshape(-1, 1, 2)
-        mask_pts = np.float32([mask.kp[m.trainIdx].pt for m in matches_accepted]).reshape(-1, 1, 2)
+    return matches_best, mask_id  # TODO: Support for list of masks -> return best match
 
 
-        #track(img, img, src_pts)
 
-        # With enough matches: Estimate Homography
-        if len(matches_accepted) > 2 * MATCHING_THRESHOLD:
-            m, msk = estimate_homography(src_pts, mask_pts)
-            dst = cv.perspectiveTransform(mask.box_points, np.linalg.pinv(m))
-            return dst
-        # With slightly fewer hits: Fit bounding box
-        if len(matches_accepted) > MATCHING_THRESHOLD:
-            return bounding_box(mask_pts)
-        # Else: No matches
-        return None  # TODO: Support for list of masks -> return best match
+def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts, MATCHING_THRESHOLD=20):
+    # With enough matches: Estimate Homography
+    if len(matches_accepted) > 2 * MATCHING_THRESHOLD:
+        m, msk = estimate_homography(src_pts, mask_pts)
+        dst = cv.perspectiveTransform(mask.box_points, np.linalg.pinv(m))
+        return dst
+    # With slightly fewer hits: Fit bounding box
+    if len(matches_accepted) > MATCHING_THRESHOLD:
+        return bounding_box(mask_pts)
+    # Else: No matches
+    return None
 
 
 def track(img_old, img_new, pts_old):
-    pts_new = []
     pts_new, st, err = cv.calcOpticalFlowPyrLK(img_old, img_new, pts_old, None, minEigThreshold=0.1)
-    return 1
+    good_new = []
+    good_old = []
+    img = []
+    valid = True  # Check if enough points are tracked
+    if pts_new is not None:
+        good_new = pts_new[st == 1]
+        good_old = pts_old[st == 1]
+
+        mask = np.zeros_like(img_old)
+        color = np.random.randint(0, 255, (100, 3))
+
+        # draw the tracks
+        for i, (new, old) in enumerate(zip(good_new, good_old)):
+            a, b = new.ravel()
+            c, d = old.ravel()
+            mask = cv.line(mask, (int(a), int(b)), (int(c), int(d)), color[i].tolist(), 2)
+            frame = cv.circle(img_old, (int(a), int(b)), 5, color[i].tolist(), -1)
+            img = cv.add(frame, mask)
+
+        cv.imshow('frame', img)
+        cv.waitKey(1)
+    return good_new, valid
+
 

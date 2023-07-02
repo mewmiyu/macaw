@@ -16,6 +16,7 @@ def macaw():
     mask = '../masks/mask_Hauptgebaeude_no_tree.jpg'  # TODO: Adapt for multiple masks
     input = '../imgs/VID_20230612_172955.mp4'  # 0  #
     compute_feature = features.compute_features_sift
+    use_feature = 'SIFT'
 
     img_mask, gray_mask = utils.load_img(mask)
     kp_mask, des_mask = compute_feature(img_mask)
@@ -28,10 +29,13 @@ def macaw():
     else:
         fvs = utils.vid_handler(input)
 
-    last_frame = cv.UMat((1, 1))
+    last_frame = None  # gray  # cv.UMat((1, 1))
     last_pts = None
+    count = -1
+    matching_rate = 10
     # loop over frames from the video file stream
     while True:  # fvs.more():
+        count +=1
         # grab the frame from the threaded video file stream, resize
         # it, and convert it to grayscale (while still retaining 3
         # channels)
@@ -42,6 +46,19 @@ def macaw():
             break
         frame = utils.resize(frame, width=450)
 
+        match use_feature:
+            case 'ORB':
+                compute_feature = features.compute_features_orb
+            case 'SIFT':
+                compute_feature = features.compute_features_sift
+            case _:
+                compute_feature = features.compute_features_sift
+
+        frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        frame_gray = cv.GaussianBlur(frame_gray, (5, 5), 0)
+
+        kp, des = compute_feature(frame_gray)
+
         boxes, labels, scores = detector.run_detector(frame)  # , showHits=True  # TODO: Do RGB channels nbeed to be swapped? rgb->bgr?
         hit, label, box = detector.filter_hits(boxes, labels, scores)
         # TODO: Filter + Crop boxes
@@ -49,13 +66,18 @@ def macaw():
         if hit and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0:  # hit and non-zero patch
             cropped = utils.crop_img(frame, *box_pixel.flatten())  # Test cropping and apply
 
+            # tracking:
+            if count % matching_rate == 0 and last_pts is not None:
+                pts_f, valid = features.track(last_frame, frame_gray, last_pts)
             # generate umat img to (hopefully) spped up
             # TODO: UMat
             uframe = cv.UMat(cropped)  # cropped #
 
             # rendering.display_image(cropped)
-            dst = features.match(cropped, masks)
+            matches, mask_id = features.match(des, masks)
+            pts_f, pts_m = features.get_points_from_matched_keypoints(matches, kp, masks[mask_id].kp)
 
+            dst = features.calc_bounding_box(matches, masks[mask_id], pts_f, pts_m)
             if dst is not None:
                 frame = rendering.render_contours(frame, [np.int32(dst)])
                 # TODO: Render meta data
