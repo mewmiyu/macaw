@@ -4,7 +4,6 @@ import torchvision.transforms as transforms
 import numpy as np
 import yaml
 
-
 from PIL import Image
 
 import argparse
@@ -110,7 +109,7 @@ def load_data(path_to_data):
                 labels.append(label)
                 images.append(input_tensor)
                 filenames.append(file)
-    return images, np.array(labels), filenames, categories
+    return images, labels, filenames, categories
 
 
 def gen_triplet_dataset(labels, batch_size, batch_amount):
