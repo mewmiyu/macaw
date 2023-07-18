@@ -13,6 +13,8 @@ import numpy as np
 import cv2 as cv
 import time
 
+from methods.viewing import Viewer
+
 
 def macaw():
     # Config:  # TODO: Outsource to base.yaml
@@ -88,12 +90,15 @@ if __name__ == "__main__":
     match cfg["METHOD"]["NAME"]:
         case "train":
             object_detection.train(cfg)
+        case "visualise":
+            viewer = Viewer()
+            viewer()
         case "execute":
             macaw()
-        case "labeling":
-            labeler = labeling.Labeler("annotations.json")
+        case "label":
+            labeler = labeling.Labeler("annotations_full.json")
             # We NEED to load all data, otherwise we won't have correct labels
-            labeler("data", cfg["METHOD"]["MODE"])
+            labeler("data/hauptgebäude", cfg["METHOD"]["MODE"])
         case _:
             print(
                 f"Unknown method: {cfg['METHOD']}. Please use one of the following: train"

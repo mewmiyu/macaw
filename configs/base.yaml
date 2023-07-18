@@ -6,5 +6,5 @@ TRAINING:
     STEPS_PER_EPOCH: 150
   DEVICE: "cpu"
 METHOD:
-  NAME: "labeling"
+  NAME: "train" # one of train, visualise, execute, label
   MODE: "annotate" # either "annotate" or "review"

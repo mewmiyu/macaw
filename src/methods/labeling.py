@@ -87,9 +87,9 @@ class Labeler:
             try:
                 with open(self.annotations_path, "w", encoding="utf-8") as f:
                     json.dump(self.labeled_images, f)
+                exit()
             except OSError:
                 print("Annotation file could not be saved.")
-            exit()
         if event.key == "b":
             minx = max(min(self.coords_x), 0)
             miny = max(min(self.coords_y), 0)

@@ -1,4 +1,10 @@
+.DS_STORE
 data/
 data.zip
 .idea/
 venv/
+wandb/
+logs/
+__pycache__/
+datasets/
+res/

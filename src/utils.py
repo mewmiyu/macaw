@@ -88,7 +88,7 @@ def load_data(path_to_data):
                     label += 1
                     subdir = subdirs
 
-                    category_parts = subdirs.lower().split("/")[-2:]
+                    category_parts = os.path.split(subdirs.lower())[-2:]
                     supercategory = category_parts[0]
                     category = "_".join(category_parts)
                     categories.append(
@@ -98,9 +98,9 @@ def load_data(path_to_data):
 
                 preprocess = transforms.Compose(
                     [
-                        # transforms.Resize(299),
+                        transforms.Resize(640),
                         # transforms.CenterCrop(299),
-                        transforms.ToTensor()
+                        transforms.ToTensor(),
                     ]
                 )
                 input_tensor = preprocess(image).to("cpu")
