@@ -20,7 +20,7 @@ def train(cnfg):
 
     loss_fn = torch.nn.TripletMarginLoss()
     optimizer = torch.optim.Adam(
-        network.parameters(), lr=parameters["LR"], betas=[0.9, 0.99], eps=1e-7
+        network.parameters(), lr=parameters["LR"], betas=(0.9, 0.99), eps=1e-7
     )
     for epoch in range(epochs):
         epoch_permutation = torch.randperm(len(images))
@@ -92,9 +92,7 @@ def batch_hard_triplet_loss(labels, embeddings, margin, device, squared=False):
     anchor_positive_dist = torch.multiply(mask_anchor_positive, pairwise_dist)
 
     # shape (batch_size, 1)
-    hardest_positive_dist = torch.max(
-        anchor_positive_dist, axis=1, keepdims=True
-    ).values
+    hardest_positive_dist = torch.max(anchor_positive_dist, dim=1, keepdim=True).values
 
     # For each anchor, get the hardest negative
     # First, we need to get a mask for every valid negative (they should have different labels)
@@ -102,15 +100,13 @@ def batch_hard_triplet_loss(labels, embeddings, margin, device, squared=False):
     mask_anchor_negative = mask_anchor_negative.type(torch.float)
 
     # We add the maximum value in each row to the invalid negatives (label(a) == label(n))
-    max_anchor_negative_dist = torch.max(pairwise_dist, axis=1, keepdims=True).values
+    max_anchor_negative_dist = torch.max(pairwise_dist, dim=1, keepdim=True).values
     anchor_negative_dist = pairwise_dist + max_anchor_negative_dist * (
         1.0 - mask_anchor_negative
     )
 
     # shape (batch_size,)
-    hardest_negative_dist = torch.min(
-        anchor_negative_dist, axis=1, keepdims=True
-    ).values
+    hardest_negative_dist = torch.min(anchor_negative_dist, dim=1, keepdim=True).values
 
     # Combine biggest d(a, p) and smallest d(a, n) into final triplet loss
     loss = hardest_positive_dist - hardest_negative_dist + margin

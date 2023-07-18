@@ -11,8 +11,11 @@ from PIL import Image
 from PIL import ImageOps
 from typing import Tuple
 
-module_handle = "https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1"  # @param ["https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1", "https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1"]
-detector_ = hub.load(module_handle).signatures["default"]
+# module_handle = "https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1"  # @param ["https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1", "https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1"]
+# detector_ = hub.load(module_handle).signatures["default"]
+
+# feature_extractor_layer = hub.KerasLayer(module_handle, trainable=False)
+# print()
 
 
 def get_label_string(label, score):

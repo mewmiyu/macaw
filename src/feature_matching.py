@@ -10,11 +10,15 @@ from collections import namedtuple
 Mask = namedtuple("Mask", ["kp", "des", "box"])
 
 
-def compute_features_sift(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:  #  -> tuple[cv.KeyPoint]
+def compute_features_sift(
+    img: np.ndarray,
+) -> tuple[cv.KeyPoint, np.ndarray]:  #  -> tuple[cv.KeyPoint]
     # SIFT: https://docs.opencv.org/4.x/da/df5/tutorial_py_sift_intro.html
 
     sift = cv.SIFT_create()
-    pic = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX).astype('uint8')  # cv.cvtColor(gray, cv.COLOR_BGR2GRAY)
+    pic = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX).astype(
+        "uint8"
+    )  # cv.cvtColor(gray, cv.COLOR_BGR2GRAY)
     kp, des = sift.detectAndCompute(pic, None)
 
     return kp, des
@@ -58,19 +62,22 @@ def get_points_from_matched_keypoints(kp, matches):
 
 
 def bounding_box(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
-    br = cv.boundingRect(np.array(pts, dtype='int32').reshape((-1, 2)))
-    return np.array([[[br[0], br[1]]], [[br[2], br[1]]],[[br[2], br[3]]], [[br[0], br[3]]]])
+    br = cv.boundingRect(np.array(pts, dtype="int32").reshape((-1, 2)))
+    return np.array(
+        [[[br[0], br[1]]], [[br[2], br[1]]], [[br[2], br[3]]], [[br[0], br[3]]]]
+    )
     # cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
 
 
 def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
     # cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
-    return cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
+    return cv.convexHull(
+        np.array(pts, dtype="int32").reshape((-1, 2))
+    )  # .reshape((-1, 2))
 
 
 # https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
 def match_flann(des, des2, kp, kp2, mask_shape, MATCHING_THRESHOLD=20):
-
     FLANN_INDEX_KDTREE = 1
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
     search_params = dict(checks=50)
@@ -89,7 +96,9 @@ def match_flann(des, des2, kp, kp2, mask_shape, MATCHING_THRESHOLD=20):
     if len(good) > 2 * MATCHING_THRESHOLD:  # TODO: Outsource homography
         M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
         h, w = mask_shape
-        pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+        pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(
+            -1, 1, 2
+        )
         dst = cv.perspectiveTransform(pts, np.linalg.pinv(M))
         return dst
     if len(good) > MATCHING_THRESHOLD:
@@ -97,11 +106,11 @@ def match_flann(des, des2, kp, kp2, mask_shape, MATCHING_THRESHOLD=20):
     return None
 
 
-def match(img: np.ndarray, masks: list[Mask], use_feature= 'SIFT'):
+def match(img: np.ndarray, masks: list[Mask], use_feature="SIFT"):
     match use_feature:
-        case 'SIFT':
+        case "SIFT":
             compute_feature = compute_features_sift
-        case 'ORB':
+        case "ORB":
             compute_feature = compute_features_orb
         case _:
             compute_feature = compute_features_sift
@@ -120,8 +129,8 @@ if __name__ == "__main__":
     import rendering
     import detector
 
-    mask = '../masks/mask_Hauptgebaeude_no_tree.jpg'
-    input = '../imgs/VID_20230612_172955.mp4'
+    mask = "../masks/mask_Hauptgebaeude_no_tree.jpg"
+    input = "../imgs/VID_20230612_172955.mp4"
 
     compute_feature = compute_features_sift
 
@@ -152,7 +161,7 @@ if __name__ == "__main__":
         target = frame.copy()
 
         boxes, labels, scores = detector.run_detector(frame)
-        hit, box = detector.filter_hits(boxes, labels, scores)
+        _, hit, box = detector.filter_hits(boxes, labels, scores)
         # TODO: Filter + Crop boxes
         if hit:
             dst = match(frame, masks)
@@ -161,10 +170,12 @@ if __name__ == "__main__":
                 target = rendering.render_contours(target, [np.int32(dst)])
 
         # show the frame and update the FPS counter
-        rendering.render_text(target, "approx. FPS: {:.2f}".format(1.0 / (time.time() - time_start)))
+        rendering.render_text(
+            target, "approx. FPS: {:.2f}".format(1.0 / (time.time() - time_start))
+        )
 
         # display the size of the queue on the frame
-        cv.imshow('frame', target)
+        cv.imshow("frame", target)
         cv.waitKey(1)
         fps.update()
 
@@ -175,4 +186,3 @@ if __name__ == "__main__":
     # do a bit of cleanup
     cv.destroyAllWindows()
     fvs.stop()
-

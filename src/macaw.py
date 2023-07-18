@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+import methods.object_detection as object_detection
 import methods.train as train
 import methods.labeling as labeling
 import utils
@@ -83,18 +84,18 @@ if __name__ == "__main__":
     if "config" not in args:
         print("Failed to load config file.")
         exit(-1)
-    cnfg = utils.read_yaml(args.config)
-    match cnfg["METHOD"]["NAME"]:
+    cfg = utils.read_yaml(args.config)
+    match cfg["METHOD"]["NAME"]:
         case "train":
-            train.train(cnfg)
+            object_detection.train(cfg)
         case "execute":
             macaw()
         case "labeling":
             labeler = labeling.Labeler("annotations.json")
             # We NEED to load all data, otherwise we won't have correct labels
-            labeler("data", cnfg["METHOD"]["MODE"])
+            labeler("data", cfg["METHOD"]["MODE"])
         case _:
             print(
-                f"Unknown method: {cnfg['METHOD']}. Please use one of the following: train"
+                f"Unknown method: {cfg['METHOD']}. Please use one of the following: train"
             )
             exit(-1)
