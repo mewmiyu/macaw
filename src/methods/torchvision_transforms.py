@@ -606,7 +606,7 @@ class SimpleCopyPaste(torch.nn.Module):
     ) -> Tuple[List[torch.Tensor], List[Dict[str, Tensor]]]:
         torch._assert(
             isinstance(images, (list, tuple))
-            and all([isinstance(v, torch.Tensor) for v in images]),
+            and all([isinstance(v["image"], torch.Tensor) for v in images]),
             "images should be a list of tensors",
         )
         torch._assert(
@@ -632,7 +632,8 @@ class SimpleCopyPaste(torch.nn.Module):
 
         output_images: List[torch.Tensor] = []
         output_targets: List[Dict[str, Tensor]] = []
-
+        
+        images = [image["image"] for image in images]
         for image, target, paste_image, paste_target in zip(
             images, targets, images_rolled, targets_rolled
         ):

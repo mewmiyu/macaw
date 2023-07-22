@@ -46,7 +46,7 @@ class CampusDataset(torch.utils.data.Dataset):
             # img, target = self.transforms(img, target) # This did not work
             img = self.transforms(img)
 
-        return img, target
+        return {"image": img, "filename": self.imgs[img_id]["file_name"]}, target
 
     def __len__(self):
         return len(self.imgs)

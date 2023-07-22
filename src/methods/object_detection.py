@@ -30,7 +30,7 @@ def get_object_detection_model(num_classes=3):
 def get_transform(train):
     transforms = []
     # converts the image, a PIL image, into a PyTorch Tensor
-    # transforms.append(T.Resize(640))
+    transforms.append(T.Resize(640))
     transforms.append(T.ToTensor())
     if train:
         # during training, randomly flip the training images
@@ -53,17 +53,17 @@ def train_experiment_fn(cfg):
     )
     # For Training
     images, targets = next(iter(data_loader))
-    images = list(image.to("mps") for image in images)
+    images = list(image["image"].to("cuda") for image in images)
     targets = [{k: v for k, v in t.items()} for t in targets]
     # targets = [
     #     {key: value[i] for key, value in targets.items()} for i in range(batch_size)
     # ]
 
-    model.to("mps")
+    model.to("cuda")
     output = model(images, targets)  # Returns losses and detections
     # For inference
     model.eval()
-    x = [torch.rand(3, 300, 400, device="mps"), torch.rand(3, 500, 400, device="mps")]
+    x = [torch.rand(3, 300, 400, device="cuda"), torch.rand(3, 500, 400, device="cuda")]
     start_time = time.time()
     predictions = model(x)  # Returns predictions
     inference_time = time.time() - start_time
@@ -73,8 +73,8 @@ def train_experiment_fn(cfg):
 def train(cfg):
     # train on the GPU or on the CPU, if a GPU is not available
     device = (
-        torch.device("mps")
-        if torch.backends.mps.is_available()
+        torch.device("cuda")
+        if torch.cuda.is_available()
         else torch.device("cpu")
     )
     print(device)
@@ -98,7 +98,7 @@ def train(cfg):
 
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test,
-        batch_size=1,
+        batch_size=4,
         shuffle=False,
         num_workers=4,
         collate_fn=utils.collate_fn,
@@ -112,12 +112,12 @@ def train(cfg):
 
     # construct an optimizer
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9, weight_decay=0.0005)
+    optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0001)
     # and a learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
 
     # let's train it for 10 epochs
-    num_epochs = 50
+    num_epochs = 30
     wandb.init(
         project="augmented-vision",
         entity="macaw",
@@ -126,11 +126,11 @@ def train(cfg):
             "num_classes": num_classes,
             "epochs": num_epochs,
             "dataset": "hauptgebäude",
-            "batch_size": 2,
+            "batch_size": 4,
             "optimizer": "SGD",
-            "lr": 0.005,
+            "lr": 0.001,
             "momentum": 0.9,
-            "weight_decay": 0.0005,
+            "weight_decay": 0.0001,
             "lr_scheduler": "StepLR",
             "step_size": 20,
             "gamma": 0.1,
@@ -146,8 +146,8 @@ def train(cfg):
         if (epoch + 1) % 10 == 0:
             evaluate(model, data_loader_test, device=device)
 
-    utils.save_on_master(model, "faster_rcnn-50-epoch.pt")
-    model_saved = torch.load("faster_rcnn-50-epoch.pt")
+    utils.save_on_master(model, "faster_rcnn-working-epoch.pt")
+    model_saved = torch.load("faster_rcnn-working-epoch.pt")
     print("That's it!")
 
 

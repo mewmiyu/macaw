@@ -4,7 +4,7 @@ TRAINING:
     BATCH_SIZE: 64
     EPOCHS: 20
     STEPS_PER_EPOCH: 150
-  DEVICE: "cpu"
+  DEVICE: "cuda"
 METHOD:
-  NAME: "train" # one of train, visualise, execute, label
+  NAME: "visualise" # one of train, visualise, execute, label
   MODE: "annotate" # either "annotate" or "review"

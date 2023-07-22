@@ -101,6 +101,6 @@ if __name__ == "__main__":
             labeler("data/hauptgebäude", cfg["METHOD"]["MODE"])
         case _:
             print(
-                f"Unknown method: {cfg['METHOD']}. Please use one of the following: train"
+                f"Unknown method: {cfg['METHOD']['NAME']}. Please use one of the following: train, visualise, execute, label"
             )
             exit(-1)

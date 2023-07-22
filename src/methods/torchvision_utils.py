@@ -4,7 +4,7 @@ import pickle
 import time
 
 import torch
-import torch.backends.mps as mps
+import torch.cuda as cuda
 import torch.distributed as dist
 
 import errno
@@ -36,7 +36,7 @@ class SmoothedValue(object):
         """
         if not is_dist_avail_and_initialized():
             return
-        t = torch.tensor([self.count, self.total], dtype=torch.float64, device="mps")
+        t = torch.tensor([self.count, self.total], dtype=torch.float64, device="cuda")
         dist.barrier()
         dist.all_reduce(t)
         t = t.tolist()
@@ -88,13 +88,13 @@ def all_gather(data):
         return [data]
 
     # serialized to a Tensor
-    buffer = pickle.dumps(data)
+    buffer = pickle.ducuda(data)
     storage = torch.ByteStorage.from_buffer(buffer)
-    tensor = torch.ByteTensor(storage).to("mps")
+    tensor = torch.ByteTensor(storage).to("cuda")
 
     # obtain Tensor size of each rank
-    local_size = torch.tensor([tensor.numel()], device="mps")
-    size_list = [torch.tensor([0], device="mps") for _ in range(world_size)]
+    local_size = torch.tensor([tensor.numel()], device="cuda")
+    size_list = [torch.tensor([0], device="cuda") for _ in range(world_size)]
     dist.all_gather(size_list, local_size)
     size_list = [int(size.item()) for size in size_list]
     max_size = max(size_list)
@@ -104,10 +104,10 @@ def all_gather(data):
     # gathering tensors of different shapes
     tensor_list = []
     for _ in size_list:
-        tensor_list.append(torch.empty((max_size,), dtype=torch.uint8, device="mps"))
+        tensor_list.append(torch.empty((max_size,), dtype=torch.uint8, device="cuda"))
     if local_size != max_size:
         padding = torch.empty(
-            size=(max_size - local_size,), dtype=torch.uint8, device="mps"
+            size=(max_size - local_size,), dtype=torch.uint8, device="cuda"
         )
         tensor = torch.cat((tensor, padding), dim=0)
     dist.all_gather(tensor_list, tensor)
@@ -190,7 +190,7 @@ class MetricLogger(object):
         iter_time = SmoothedValue(fmt="{avg:.4f}")
         data_time = SmoothedValue(fmt="{avg:.4f}")
         space_fmt = ":" + str(len(str(len(iterable)))) + "d"
-        if torch.backends.mps.is_available():
+        if torch.cuda.is_available():
             log_msg = self.delimiter.join(
                 [
                     header,
@@ -221,7 +221,7 @@ class MetricLogger(object):
             if i % print_freq == 0 or i == len(iterable) - 1:
                 eta_seconds = iter_time.global_avg * (len(iterable) - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
-                if mps.is_available():
+                if cuda.is_available():
                     print(
                         log_msg.format(
                             i,
@@ -230,7 +230,7 @@ class MetricLogger(object):
                             meters=str(self),
                             time=str(iter_time),
                             data=str(data_time),
-                            memory=torch.mps.current_allocated_memory() / MB,
+                            memory=torch.cuda.max_memory_allocated() / MB,
                         )
                     )
                     if is_train:
