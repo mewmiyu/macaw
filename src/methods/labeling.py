@@ -7,6 +7,7 @@ import numpy as np
 import utils
 
 from typing import Tuple
+from utils.image_loader import ImageLoader
 
 
 class Labeler:
@@ -34,7 +35,8 @@ class Labeler:
         self.coords_y = []
 
     def __call__(self, data_folder: str, mode: str):
-        images, labels, filenames, self.labeled_images["categories"] = utils.load_data(
+        loader = ImageLoader()
+        images, labels, filenames, self.labeled_images["categories"] = loader.load_data(
             data_folder
         )
         for i, image in enumerate(images):

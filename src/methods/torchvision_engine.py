@@ -32,12 +32,12 @@ def train_one_epoch(
         images = list(image["image"].to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
         # with torch.autocast("cuda", enabled=scaler is not None):
-        #loss_dict = model(images, targets)
+        # loss_dict = model(images, targets)
         with torch.cuda.amp.autocast(enabled=scaler is not None):
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
         del targets, images
-        #losses = sum(loss for loss in loss_dict.values())
+        # losses = sum(loss for loss in loss_dict.values())
 
         # reduce losses over all GPUs for logging purposes
         loss_dict_reduced = utils.reduce_dict(loss_dict)
@@ -101,7 +101,9 @@ def evaluate(model, data_loader, device):
     ):
         images = list(img["image"].to(device) for img in images)
 
-        if torch.cuda.is_available():
+        if torch.backends.mps.is_available():
+            torch.mps.synchronize()
+        elif torch.cuda.is_available():
             torch.cuda.synchronize()
         model_time = time.time()
         outputs = model(images)

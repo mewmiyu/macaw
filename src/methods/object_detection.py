@@ -8,10 +8,9 @@ import torch.distributed as dist
 import sys
 import wandb
 
-from datasets.campus_dataset import CampusDataset
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
+from datasets.campus_dataset import CampusDataset
 from methods.torchvision_engine import train_one_epoch, evaluate
 import methods.torchvision_utils as utils
 

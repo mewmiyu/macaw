@@ -98,7 +98,7 @@ if __name__ == "__main__":
         case "label":
             labeler = labeling.Labeler("annotations_full.json")
             # We NEED to load all data, otherwise we won't have correct labels
-            labeler("data/hauptgebäude", cfg["METHOD"]["MODE"])
+            labeler("data", cfg["METHOD"]["MODE"])
         case _:
             print(
                 f"Unknown method: {cfg['METHOD']['NAME']}. Please use one of the following: train, visualise, execute, label"

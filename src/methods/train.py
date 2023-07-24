@@ -3,6 +3,8 @@ import torch
 import utils
 import numpy as np
 
+from utils.image_loader import ImageLoader
+
 
 def train(cnfg):
     network = siamese_network.FeatureNetwork()
@@ -10,7 +12,8 @@ def train(cnfg):
     device = training_cnfg["DEVICE"]
     parameters = training_cnfg["PARAMETERS"]
     # network.to(device)
-    images, _, labels, _ = utils.load_data("data")
+    image_loader = ImageLoader()
+    images, _, labels, _ = image_loader.load_data("data")
 
     labels = torch.from_numpy(labels)
     # dataset = utils.gen_triplet_dataset(labels, parameters['BATCH_SIZE'], parameters['STEPS_PER_EPOCH'])

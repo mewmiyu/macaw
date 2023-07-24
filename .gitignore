@@ -1,11 +1,11 @@
 .DS_STORE
 restdata/
 data/
+data_flower_photos/
 data.zip
 .idea/
 venv/
 wandb/
 logs/
 __pycache__/
-datasets/
 res/
