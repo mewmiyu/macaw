@@ -28,13 +28,13 @@ class SmoothedValue:
         self.count += n
         self.total += value * n
 
-    def synchronize_between_processes(self):
+    def synchronize_between_processes(self, device):
         """
         Warning: does not synchronize the deque!
         """
         if not is_dist_avail_and_initialized():
             return
-        t = torch.tensor([self.count, self.total], dtype=torch.float64, device="cuda")
+        t = torch.tensor([self.count, self.total], dtype=torch.float64, device=device)
         dist.barrier()
         dist.all_reduce(t)
         t = t.tolist()
@@ -143,14 +143,22 @@ class MetricLogger:
             loss_str.append(f"{name}: {str(meter)}")
         return self.delimiter.join(loss_str)
 
-    def synchronize_between_processes(self):
+    def synchronize_between_processes(self, device):
         for meter in self.meters.values():
-            meter.synchronize_between_processes()
+            meter.synchronize_between_processes(device)
 
     def add_meter(self, name, meter):
         self.meters[name] = meter
 
-    def log_every(self, iterable, print_freq, header=None, is_train=True, epoch=0):
+    def log_every(
+        self,
+        iterable,
+        print_freq,
+        header=None,
+        ignore_wandb=False,
+        is_train=True,
+        epoch=0,
+    ):
         i = 0
         if not header:
             header = ""
@@ -238,7 +246,7 @@ class MetricLogger:
                         )
                     )
 
-                if is_train:
+                if is_train and not ignore_wandb:
                     metrics_dict = {k: v.median for k, v in self.meters.items()}
                     wandb.log(metrics_dict, step=len(iterable) * epoch + i)
             i += 1

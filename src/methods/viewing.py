@@ -2,10 +2,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import torch
-import torchvision.transforms as T
+import torchvision
+
+torchvision.disable_beta_transforms_warning()
+import torchvision.transforms.v2 as T
 
 from datasets.campus_dataset import CampusDataset
-import methods.torchvision_utils as utils
+import vision.references.detection.utils as utils
 
 
 def get_transform(train):
@@ -16,14 +19,15 @@ def get_transform(train):
     if train:
         # during training, randomly flip the training images
         # and ground-truth for data augmentation
-        #transforms.append(T.RandomHorizontalFlip(0.5))
+        # transforms.append(T.RandomHorizontalFlip(0.5))
         pass
     return T.Compose(transforms)
 
 
 class Viewer:
-    def __init__(self) -> None:
-        self.model = torch.load("faster_rcnn-working-epoch.pt").to("cuda")
+    def __init__(self, device="cpu") -> None:
+        self.device = device
+        self.model = torch.load("faster_rcnn-working-epoch.pt").to(self.device)
         self.model.eval()
 
         dataset = CampusDataset("annotations_full.json", get_transform(train=True))
@@ -41,7 +45,7 @@ class Viewer:
 
     def run_inference(self):
         self.data, targets = next(iter(self.data_loader))
-        self.images = list(image["image"].to("cuda") for image in self.data)
+        self.images = list(image["image"].to(self.device) for image in self.data)
         self.image_names = list(image["filename"] for image in self.data)
         targets = [{k: v for k, v in t.items()} for t in targets]
         self.title = self.image_names[0]
@@ -50,7 +54,10 @@ class Viewer:
         inference_time = time.time() - start_time
         print("Inference time", inference_time)
 
-        return np.array(self.images[0].detach().to("cpu").permute((1, 2, 0))), targets[0]['boxes']
+        return (
+            np.array(self.images[0].detach().to("cpu").permute((1, 2, 0))),
+            targets[0]["boxes"],
+        )
 
     def __call__(self):
         image, target = self.run_inference()

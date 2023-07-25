@@ -1,8 +1,13 @@
 import json
 import os
 import torch.utils.data
-
+import torchvision
 from PIL import Image
+from torchvision import datapoints
+from torchvision.ops.boxes import box_convert
+
+torchvision.disable_beta_transforms_warning()
+from torchvision.transforms.v2 import functional as F
 
 
 class CampusDataset(torch.utils.data.Dataset):
@@ -25,9 +30,7 @@ class CampusDataset(torch.utils.data.Dataset):
         category = self.categories[ct_id]
 
         boxes = torch.as_tensor([bbox], dtype=torch.float32)
-        boxes[:, 2] = boxes[:, 0] +  boxes[:, 2]
-        boxes[:, 3] = boxes[:, 1] +  boxes[:, 3]
-        #print(boxes.shape)
+        boxes = box_convert(boxes=boxes, in_fmt="xywh", out_fmt="xyxy")
         labels = torch.as_tensor([category["id"]], dtype=torch.int64)
         iscrowd = torch.as_tensor([iscrowd], dtype=torch.int64)
         area = torch.as_tensor([area], dtype=torch.int64)
@@ -37,17 +40,19 @@ class CampusDataset(torch.utils.data.Dataset):
         img = Image.open(img_path)
 
         target = {
-            "image_id": torch.as_tensor(img_id, dtype=torch.int64),
-            "boxes": boxes,
+            "image_id": torch.as_tensor([img_id], dtype=torch.int64),
+            "boxes": datapoints.BoundingBox(
+                boxes,
+                format=datapoints.BoundingBoxFormat.XYXY,
+                spatial_size=F.get_spatial_size(img),
+            ),
             "labels": labels,
             "iscrowd": iscrowd,
             "area": area,
         }
 
         if self.transforms is not None:
-            # TODO: See how we can apply transformations to the annotations
-            # img, target = self.transforms(img, target) # This did not work
-            img = self.transforms(img)
+            img, target["boxes"] = self.transforms(img, target["boxes"])
 
         return {"image": img, "filename": self.imgs[img_id]["file_name"]}, target
 

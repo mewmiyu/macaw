@@ -1,12 +1,14 @@
 import copy
 import os
 
+from pycocotools import mask as coco_mask
+from pycocotools.coco import COCO
 import torch
 import torch.utils.data
 import torchvision
+
+torchvision.disable_beta_transforms_warning()
 import torchvision.transforms.v2 as T
-from pycocotools import mask as coco_mask
-from pycocotools.coco import COCO
 from torchvision.datasets import wrap_dataset_for_transforms_v2
 
 

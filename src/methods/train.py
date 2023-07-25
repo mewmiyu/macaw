@@ -1,9 +1,8 @@
 import architectures.siamese_network as siamese_network
 import torch
-import utils
 import numpy as np
 
-from utils_package.image_loader import ImageLoader
+from utils.image_loader import ImageLoader
 
 
 def train(cnfg):
@@ -13,17 +12,17 @@ def train(cnfg):
     parameters = training_cnfg["PARAMETERS"]
     # network.to(device)
     image_loader = ImageLoader()
-    images, _, labels, _ = image_loader.load_data("data")
+    images, _, labels, _ = image_loader("data")
 
     labels = torch.from_numpy(labels)
-    # dataset = utils.gen_triplet_dataset(labels, parameters['BATCH_SIZE'], parameters['STEPS_PER_EPOCH'])
+    # dataset = utils.gen_triplet_dataset(labels, parameters['BATCH_SIZE'], parameters['STEPS'])
     epochs = parameters["EPOCHS"]
     batch_size = parameters["BATCH_SIZE"]
     batches_per_epoch = int(np.floor(len(images) / batch_size))
 
     loss_fn = torch.nn.TripletMarginLoss()
     optimizer = torch.optim.Adam(
-        network.parameters(), lr=parameters["LR"], betas=(0.9, 0.99), eps=1e-7
+        network.parameters(), lr=parameters["BASE_LR"], betas=(0.9, 0.99), eps=1e-7
     )
     for epoch in range(epochs):
         epoch_permutation = torch.randperm(len(images))

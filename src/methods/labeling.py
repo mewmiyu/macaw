@@ -4,10 +4,9 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-import utils
 
 from typing import Tuple
-from utils_package.image_loader import ImageLoader
+from utils.image_loader import ImageLoader
 
 
 class Labeler:
@@ -34,11 +33,9 @@ class Labeler:
         self.coords_x = []
         self.coords_y = []
 
-    def __call__(self, data_folder: str, mode: str):
+    def __call__(self, folder: str, mode: str):
         loader = ImageLoader()
-        images, labels, filenames, self.labeled_images["categories"] = loader.load_data(
-            data_folder
-        )
+        images, labels, filenames, self.labeled_images["categories"] = loader(folder)
         for i, image in enumerate(images):
             self.coords_x = []
             self.coords_y = []
@@ -53,7 +50,15 @@ class Labeler:
                 continue
 
             if not ann_exists and img is None:
-                self.image_id = max([int(img_obj["id"]) for img_obj in self.labeled_images["images"]])+1
+                self.image_id = (
+                    max(
+                        [
+                            int(img_obj["id"])
+                            for img_obj in self.labeled_images["images"]
+                        ]
+                    )
+                    + 1
+                )
                 self.labeled_images["images"].append(
                     {
                         "id": self.image_id,
@@ -89,12 +94,7 @@ class Labeler:
             plt.title(self.title)
             plt.draw()
         if event.key == "q":
-            try:
-                with open(self.annotations_path, "w", encoding="utf-8") as f:
-                    json.dump(self.labeled_images, f)
-                exit()
-            except OSError:
-                print("Annotation file could not be saved.")
+            self.save_annotations(quit_on_success=True)
         if event.key == "b":
             minx = max(min(self.coords_x), 0)
             miny = max(min(self.coords_y), 0)
@@ -145,7 +145,7 @@ class Labeler:
             plt.title(self.title)
             plt.draw()
 
-    def annotation_exists(self, image_name, category_id) -> Tuple[bool, dict, dict]:
+    def annotation_exists(self, image_name, category_id):
         # Check if an image with the same file_name exists in images
         for image in self.labeled_images["images"]:
             if image["file_name"] == image_name:
@@ -167,3 +167,12 @@ class Labeler:
         plt.plot([minx, maxx], [miny, miny], "red", zorder=2)
         plt.plot([minx, maxx], [maxy, maxy], "red", zorder=2)
         plt.draw()
+
+    def save_annotations(self, quit_on_success=False):
+        try:
+            with open(self.annotations_path, "w", encoding="utf-8") as f:
+                json.dump(self.labeled_images, f)
+            if quit_on_success:
+                exit()
+        except OSError:
+            print("Annotation file could not be saved.")

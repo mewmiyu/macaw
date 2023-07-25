@@ -1,10 +1,28 @@
 TRAINING:
+  # One of "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_fpn"
+  META_ARCHITECTURE: "fasterrcnn_resnet50_fpn"
+  # One of "FasterRCNN_ResNet50_FPN_Weights", "FasterRCNN_MobileNet_V3_Large_FPN_Weights"
+  WEIGHTS: "FasterRCNN_ResNet50_FPN_Weights"
+  NUM_CLASSES: 13
+  TEST_PROPORTION: 0.2
   PARAMETERS:
-    LR: 0.001
-    BATCH_SIZE: 64
-    EPOCHS: 20
-    STEPS_PER_EPOCH: 150
+    BASE_LR: 0.001
+    MOMENTUM: 0.9
+    WEIGHT_DECAY: 0.0001
+    BATCH_SIZE: 2
+    EPOCHS: 30
+    STEPS: 20 #  StepLR only accepts a single number
+    GAMMA: 0.1
+    NUM_WORKERS: 4
   DEVICE: "cuda"
+DATA:
+  ANNOTATIONS: "annotations_full.json"
+  SUPERCATEGORIES: ["hauptgebäude"] #, "karo5", "piloty"]
+  SUBCATEGORIES: ["right", "back", "left", "front"]
 METHOD:
   NAME: "visualise" # one of train, visualise, execute, label
   MODE: "annotate" # either "annotate" or "review"
+WANDB:
+  ENTITY: "macaw"
+  PROJECT: "augmented-vision"
+  IGNORE: True

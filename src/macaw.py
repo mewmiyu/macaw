@@ -4,7 +4,7 @@ import sys
 import methods.object_detection as object_detection
 import methods.train as train
 import methods.labeling as labeling
-import utils
+import utils_old
 import feature_matching
 import detector
 import rendering
@@ -22,14 +22,14 @@ def macaw():
     input = "../imgs/VID_20230612_172955.mp4"  # 0  #
     compute_feature = feature_matching.compute_features_sift
 
-    img_mask, gray_mask = utils.load_img(mask)
+    img_mask, gray_mask = utils_old.load_img(mask)
     kp_mask, des_mask = compute_feature(img_mask)
     masks = [feature_matching.Mask(kp_mask, des_mask, img_mask.shape[:2])]
 
     if type(input) is int:
-        fvs = utils.webcam_handler()  #
+        fvs = utils_old.webcam_handler()  #
     else:
-        fvs = utils.vid_handler(input)
+        fvs = utils_old.vid_handler(input)
 
     # loop over frames from the video file stream
     while True:  # fvs.more():
@@ -41,7 +41,7 @@ def macaw():
         frame = fvs.read()
         if frame is None:
             break
-        frame = utils.resize(frame, width=450)
+        frame = utils_old.resize(frame, width=450)
 
         boxes, labels, scores = detector.run_detector(
             frame
@@ -50,7 +50,7 @@ def macaw():
         # TODO: Filter + Crop boxes
         if hit:
             box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int)
-            cropped = utils.crop_img(
+            cropped = utils_old.crop_img(
                 frame, *box_pixel.flatten()
             )  # Test cropping and apply
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     if "config" not in args:
         print("Failed to load config file.")
         exit(-1)
-    cfg = utils.read_yaml(args.config)
+    cfg = utils_old.read_yaml(args.config)
     match cfg["METHOD"]["NAME"]:
         case "train":
             object_detection.train(cfg)

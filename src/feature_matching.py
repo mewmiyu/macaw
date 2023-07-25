@@ -4,7 +4,7 @@ import numpy as np
 from imutils.video import FPS
 import time
 
-import utils
+import utils_old
 from collections import namedtuple
 
 Mask = namedtuple("Mask", ["kp", "des", "box"])
@@ -134,14 +134,14 @@ if __name__ == "__main__":
 
     compute_feature = compute_features_sift
 
-    img_mask, gray_mask = utils.load_img(mask)
+    img_mask, gray_mask = utils_old.load_img(mask)
     kp_mask, des_mask = compute_feature(img_mask)
     masks = [Mask(kp_mask, des_mask, img_mask.shape[:2])]
 
     if type(input) is int:
-        fvs = utils.webcam_handler()  #
+        fvs = utils_old.webcam_handler()  #
     else:
-        fvs = utils.vid_handler(input)
+        fvs = utils_old.vid_handler(input)
 
     fps = FPS().start()
     fps.update()
@@ -156,7 +156,7 @@ if __name__ == "__main__":
         frame = fvs.read()
         if frame is None:
             break
-        frame = utils.resize(frame, width=450)
+        frame = utils_old.resize(frame, width=450)
 
         target = frame.copy()
 

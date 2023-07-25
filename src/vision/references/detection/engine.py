@@ -10,7 +10,14 @@ from vision.references.detection.coco_utils import get_coco_api_from_dataset
 
 
 def train_one_epoch(
-    model, optimizer, data_loader, device, epoch, print_freq, scaler=None
+    model,
+    optimizer,
+    data_loader,
+    device,
+    epoch,
+    print_freq,
+    scaler=None,
+    ignore_wandb=False,
 ):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -27,7 +34,7 @@ def train_one_epoch(
         )
 
     for images, targets in metric_logger.log_every(
-        data_loader, print_freq, header, is_train=True, epoch=epoch
+        data_loader, print_freq, header, ignore_wandb, is_train=True, epoch=epoch
     ):
         images = list(image["image"].to(device) for image in images)
         targets = [
@@ -130,7 +137,7 @@ def evaluate(model, data_loader, device):
         metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
 
     # gather the stats from all processes
-    metric_logger.synchronize_between_processes()
+    metric_logger.synchronize_between_processes(device)
     print("Averaged stats:", metric_logger)
     coco_evaluator.synchronize_between_processes()
 

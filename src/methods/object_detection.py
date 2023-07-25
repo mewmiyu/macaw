@@ -1,46 +1,38 @@
-import math
 import time
 import torch
 import torch.utils.data
-import torchvision
-import torchvision.transforms as T
-import torch.distributed as dist
-import sys
 import wandb
 
+from torchvision.models.detection import (
+    fasterrcnn_resnet50_fpn,
+    FasterRCNN_ResNet50_FPN_Weights,
+    fasterrcnn_mobilenet_v3_large_fpn,
+    FasterRCNN_MobileNet_V3_Large_FPN_Weights,
+)
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 from datasets.campus_dataset import CampusDataset
-from methods.torchvision_engine import train_one_epoch, evaluate
-import methods.torchvision_utils as utils
+from vision.references.detection.engine import train_one_epoch, evaluate
+from utils.preprocess import get_transform
+import vision.references.detection.utils as utils
 
 
-def get_object_detection_model(num_classes=17):
+def get_object_detection_model(train_cfg):
     # load an object detection model pre-trained on COCO
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+    weights = eval(train_cfg["WEIGHTS"]).DEFAULT
+    model = eval(train_cfg["META_ARCHITECTURE"])(weights)
     # get the number of input features for the classifier
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     # replace the pre-trained head with a new one
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+    model.roi_heads.box_predictor = FastRCNNPredictor(
+        in_features, train_cfg["NUM_CLASSES"]
+    )
 
-    return model
-
-
-def get_transform(train):
-    transforms = []
-    # converts the image, a PIL image, into a PyTorch Tensor
-    transforms.append(T.Resize(640))
-    transforms.append(T.ToTensor())
-    if train:
-        # during training, randomly flip the training images
-        # and ground-truth for data augmentation
-        # transforms.append(T.RandomHorizontalFlip(0.5))
-        pass
-    return T.Compose(transforms)
+    return model, weights
 
 
 def train_experiment_fn(cfg):
-    model = get_object_detection_model(num_classes=17)
+    model = get_object_detection_model({})
     dataset = CampusDataset("annotations_full.json", get_transform(train=True))
     batch_size = 2
     data_loader = torch.utils.data.DataLoader(
@@ -70,76 +62,110 @@ def train_experiment_fn(cfg):
 
 
 def train(cfg):
-    # train on the GPU or on the CPU, if a GPU is not available
-    device = (
-        torch.device("cuda")
-        if torch.cuda.is_available()
-        else torch.device("cpu")
-    )
-    print(device)
+    train_cfg = cfg["TRAINING"]
+    device = train_cfg["DEVICE"]
+    if (
+        device.startswith("cuda")
+        and torch.cuda.is_available()
+        or device == "mps"
+        and torch.backends.mps.is_available()
+        or device == "cpu"
+    ):
+        device = torch.device(device)
+    else:
+        raise ValueError(
+            f"We currently do not support the device: {device}, or it is not made visible to PyTorch"
+        )
+    num_classes = train_cfg["NUM_CLASSES"]
+    test_proportion = train_cfg["TEST_PROPORTION"]
+    batch_size = train_cfg["PARAMETERS"]["BATCH_SIZE"]
+    num_workers = train_cfg["PARAMETERS"]["NUM_WORKERS"]
 
-    # our dataset has two classes only - background and person
-    num_classes = 17
-    # use our dataset and defined transformations
-    dataset = CampusDataset("annotations_full.json", get_transform(train=True))
-    # subsets = torch.utils.data.random_split(dataset, [0.8, 0.2])
-    dataset_test = CampusDataset("annotations_full.json", get_transform(train=False))
-
-    # split the dataset in train and test set
-    indices = torch.randperm(len(dataset)).tolist()
-    dataset = torch.utils.data.Subset(dataset, indices[:-65])
-    dataset_test = torch.utils.data.Subset(dataset_test, indices[-65:])
-
-    # define training and validation data loaders
-    data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=2, shuffle=True, num_workers=4, collate_fn=utils.collate_fn
-    )
-
-    data_loader_test = torch.utils.data.DataLoader(
-        dataset_test,
-        batch_size=4,
-        shuffle=False,
-        num_workers=4,
-        collate_fn=utils.collate_fn,
-    )
-
+    meta_architecture = train_cfg["META_ARCHITECTURE"]
     # get the model using our helper function
-    model = get_object_detection_model(num_classes)
+    model, weights = get_object_detection_model(train_cfg)
 
     # move model to the right device
     model.to(device)
 
+    annotation_file = cfg["DATA"]["ANNOTATIONS"]
+    # use our dataset and defined transformations
+    dataset = CampusDataset(annotation_file, get_transform(train=True))
+    dataset_test = CampusDataset(annotation_file, get_transform(train=False))
+
+    # split the dataset in train and test set
+    dataset_size = len(dataset)
+    indices = torch.randperm(dataset_size).tolist()
+    train_set_size = int(dataset_size * (1 - test_proportion))
+    train_set_size += train_set_size % 2
+    test_set_size = dataset_size - train_set_size
+    dataset = torch.utils.data.Subset(dataset, indices[:-test_set_size])
+    dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_set_size:])
+
+    # define training and validation data loaders
+    data_loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        collate_fn=utils.collate_fn,
+    )
+    data_loader_test = torch.utils.data.DataLoader(
+        dataset_test,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        collate_fn=utils.collate_fn,
+    )
+
+    learning_rate = train_cfg["PARAMETERS"]["BASE_LR"]
+    momentum = train_cfg["PARAMETERS"]["MOMENTUM"]
+    weight_decay = train_cfg["PARAMETERS"]["WEIGHT_DECAY"]
     # construct an optimizer
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0001)
+    optimizer = torch.optim.SGD(
+        params, lr=learning_rate, momentum=momentum, weight_decay=weight_decay
+    )
+    step_size = train_cfg["PARAMETERS"]["STEPS"]
+    gamma = train_cfg["PARAMETERS"]["GAMMA"]
     # and a learning rate scheduler
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer, step_size=step_size, gamma=gamma
+    )
 
-    # let's train it for 10 epochs
-    num_epochs = 30
-    if True:
+    num_epochs = train_cfg["PARAMETERS"]["EPOCHS"]
+    dataset_parts = cfg["DATA"]["SUPERCATEGORIES"]
+    if not cfg["WANDB"]["IGNORE"]:
         wandb.init(
-            project="augmented-vision",
-            entity="macaw",
+            project=cfg["WANDB"]["PROJECT"],
+            entity=cfg["WANDB"]["ENTITY"],
             config={
-                "architecture": "fasterrcnn_resnet50_fpn",
+                "architecture": meta_architecture,
                 "num_classes": num_classes,
                 "epochs": num_epochs,
-                "dataset": "hauptgebäude",
-                "batch_size": 4,
-                "optimizer": "SGD",
-                "lr": 0.001,
-                "momentum": 0.9,
-                "weight_decay": 0.0001,
-                "lr_scheduler": "StepLR",
-                "step_size": 20,
-                "gamma": 0.1,
+                "dataset": dataset_parts,
+                "batch_size": batch_size,
+                "optimizer": type(optimizer).__name__,
+                "lr": learning_rate,
+                "momentum": momentum,
+                "weight_decay": weight_decay,
+                "lr_scheduler": type(lr_scheduler).__name__,
+                "step_size": step_size,
+                "gamma": gamma,
             },
         )
 
     for epoch in range(num_epochs):
         # train for one epoch, printing every 10 iterations
-        train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
+        train_one_epoch(
+            model,
+            optimizer,
+            data_loader,
+            device,
+            epoch,
+            print_freq=10,
+            ignore_wandb=cfg["WANDB"]["IGNORE"],
+        )
         # update the learning rate
         lr_scheduler.step()
         # evaluate on the test dataset
@@ -148,7 +174,6 @@ def train(cfg):
 
     utils.save_on_master(model, "faster_rcnn-working-epoch.pt")
     model_saved = torch.load("faster_rcnn-working-epoch.pt")
-    print("That's it!")
 
 
 if __name__ == "__main__":

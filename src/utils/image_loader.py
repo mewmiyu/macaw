@@ -1,7 +1,7 @@
 import os
 
 from PIL import Image
-from torchvision import transforms
+from utils.preprocess import get_transform
 
 
 class ImageLoader:
@@ -9,7 +9,7 @@ class ImageLoader:
         self.supercategories = ["hauptgebäude", "karo5", "piloty", "ULB"]
         self.subcategories = ["right", "back", "left", "front"]
 
-    def load_data(self, path_to_data):
+    def __call__(self, path_to_data):
         """
         This function loads all images from the data directory.
         Each new directory creates a new label, so images from
@@ -38,27 +38,18 @@ class ImageLoader:
                     for file in os.listdir(subcategory_path)
                     if os.path.isfile(os.path.join(subcategory_path, file))
                 ]
+                if len(files) == 0:
+                    continue
+
                 for file in files:
                     image = Image.open(os.path.join(subcategory_path, file))
+                    image_tensor = get_transform(train=False)(image).to("cpu")
 
-                    preprocess = transforms.Compose(
-                        [
-                            transforms.Resize(640),
-                            # transforms.CenterCrop(299),
-                            transforms.ToTensor(),
-                        ]
-                    )
-                    input_tensor = preprocess(image).to("cpu")
-                    # if(input_tensor.shape != (3,299,299)):
-                    #    continue
                     labels.append(label)
-                    images.append(input_tensor)
+                    images.append(image_tensor)
                     file_names.append(file)
 
                 label += 1
-                print(subdirs)
-                #category_parts = os.path.split(subdirs.lower())[-2:]
-                #supercategory = category_parts[0]
                 category = "_".join([supercategory, subcategory])
                 categories.append(
                     {
