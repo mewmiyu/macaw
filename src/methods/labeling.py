@@ -7,7 +7,7 @@ import numpy as np
 import utils
 
 from typing import Tuple
-from utils.image_loader import ImageLoader
+from utils_package.image_loader import ImageLoader
 
 
 class Labeler:
@@ -53,6 +53,7 @@ class Labeler:
                 continue
 
             if not ann_exists and img is None:
+                self.image_id = max([int(img_obj["id"]) for img_obj in self.labeled_images["images"]])+1
                 self.labeled_images["images"].append(
                     {
                         "id": self.image_id,
@@ -76,6 +77,8 @@ class Labeler:
     def on_press(self, event):
         print("press", event.key)
         if event.key == "n":
+            with open(self.annotations_path, "w", encoding="utf-8") as f:
+                json.dump(self.labeled_images, f)
             print(self.coords_x, self.coords_y)
             plt.close()
         if event.key == "r":

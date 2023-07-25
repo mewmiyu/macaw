@@ -3,7 +3,7 @@ import torch
 import utils
 import numpy as np
 
-from utils.image_loader import ImageLoader
+from utils_package.image_loader import ImageLoader
 
 
 def train(cnfg):

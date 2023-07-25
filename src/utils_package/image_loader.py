@@ -6,7 +6,7 @@ from torchvision import transforms
 
 class ImageLoader:
     def __init__(self) -> None:
-        self.supercategories = ["hauptgebäude"]
+        self.supercategories = ["hauptgebäude", "karo5", "piloty", "ULB"]
         self.subcategories = ["right", "back", "left", "front"]
 
     def load_data(self, path_to_data):
@@ -56,8 +56,9 @@ class ImageLoader:
                     file_names.append(file)
 
                 label += 1
-                category_parts = os.path.split(subdirs.lower())[-2:]
-                supercategory = category_parts[0]
+                print(subdirs)
+                #category_parts = os.path.split(subdirs.lower())[-2:]
+                #supercategory = category_parts[0]
                 category = "_".join([supercategory, subcategory])
                 categories.append(
                     {

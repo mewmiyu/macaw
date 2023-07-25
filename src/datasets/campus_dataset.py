@@ -25,6 +25,9 @@ class CampusDataset(torch.utils.data.Dataset):
         category = self.categories[ct_id]
 
         boxes = torch.as_tensor([bbox], dtype=torch.float32)
+        boxes[:, 2] = boxes[:, 0] +  boxes[:, 2]
+        boxes[:, 3] = boxes[:, 1] +  boxes[:, 3]
+        #print(boxes.shape)
         labels = torch.as_tensor([category["id"]], dtype=torch.int64)
         iscrowd = torch.as_tensor([iscrowd], dtype=torch.int64)
         area = torch.as_tensor([area], dtype=torch.int64)

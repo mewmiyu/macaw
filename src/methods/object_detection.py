@@ -15,7 +15,7 @@ from methods.torchvision_engine import train_one_epoch, evaluate
 import methods.torchvision_utils as utils
 
 
-def get_object_detection_model(num_classes=3):
+def get_object_detection_model(num_classes=17):
     # load an object detection model pre-trained on COCO
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
     # get the number of input features for the classifier
@@ -40,7 +40,7 @@ def get_transform(train):
 
 
 def train_experiment_fn(cfg):
-    model = get_object_detection_model(num_classes=3)
+    model = get_object_detection_model(num_classes=17)
     dataset = CampusDataset("annotations_full.json", get_transform(train=True))
     batch_size = 2
     data_loader = torch.utils.data.DataLoader(
@@ -79,7 +79,7 @@ def train(cfg):
     print(device)
 
     # our dataset has two classes only - background and person
-    num_classes = 3
+    num_classes = 17
     # use our dataset and defined transformations
     dataset = CampusDataset("annotations_full.json", get_transform(train=True))
     # subsets = torch.utils.data.random_split(dataset, [0.8, 0.2])
@@ -87,8 +87,8 @@ def train(cfg):
 
     # split the dataset in train and test set
     indices = torch.randperm(len(dataset)).tolist()
-    dataset = torch.utils.data.Subset(dataset, indices[:-14])
-    dataset_test = torch.utils.data.Subset(dataset_test, indices[-14:])
+    dataset = torch.utils.data.Subset(dataset, indices[:-65])
+    dataset_test = torch.utils.data.Subset(dataset_test, indices[-65:])
 
     # define training and validation data loaders
     data_loader = torch.utils.data.DataLoader(
@@ -117,24 +117,25 @@ def train(cfg):
 
     # let's train it for 10 epochs
     num_epochs = 30
-    wandb.init(
-        project="augmented-vision",
-        entity="macaw",
-        config={
-            "architecture": "fasterrcnn_resnet50_fpn",
-            "num_classes": num_classes,
-            "epochs": num_epochs,
-            "dataset": "hauptgebäude",
-            "batch_size": 4,
-            "optimizer": "SGD",
-            "lr": 0.001,
-            "momentum": 0.9,
-            "weight_decay": 0.0001,
-            "lr_scheduler": "StepLR",
-            "step_size": 20,
-            "gamma": 0.1,
-        },
-    )
+    if True:
+        wandb.init(
+            project="augmented-vision",
+            entity="macaw",
+            config={
+                "architecture": "fasterrcnn_resnet50_fpn",
+                "num_classes": num_classes,
+                "epochs": num_epochs,
+                "dataset": "hauptgebäude",
+                "batch_size": 4,
+                "optimizer": "SGD",
+                "lr": 0.001,
+                "momentum": 0.9,
+                "weight_decay": 0.0001,
+                "lr_scheduler": "StepLR",
+                "step_size": 20,
+                "gamma": 0.1,
+            },
+        )
 
     for epoch in range(num_epochs):
         # train for one epoch, printing every 10 iterations
