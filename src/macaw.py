@@ -48,14 +48,14 @@ def macaw():
         )  # , showHits=True  # TODO: Do RGB channels nbeed to be swapped? rgb->bgr?
         hit, label, box = detector.filter_hits(boxes, labels, scores)
         # TODO: Filter + Crop boxes
-        if hit:
+        if hit:  # hit
             box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int)
             cropped = utils_old.crop_img(
                 frame, *box_pixel.flatten()
             )  # Test cropping and apply
 
             if np.all(np.array(cropped.shape) > 0):
-                rendering.display_image(cropped)
+                # rendering.display_image(cropped)
                 dst = feature_matching.match(cropped, masks)
 
                 if dst is not None:

@@ -120,7 +120,7 @@ def match(img: np.ndarray, masks: list[Mask], use_feature="SIFT"):
 
         kp, des = compute_feature(gray_img)
 
-        dst = match_flann(des, mask.des, kp, mask.kp, mask.box, 20)
+        dst = match_flann(des, mask.des, kp, mask.kp, mask.box, 10)
         return dst  # TODO: Support for list of masks -> return best match
     return img
 
