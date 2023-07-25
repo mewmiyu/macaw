@@ -4,9 +4,9 @@ import time
 
 import torch
 import torchvision.models.detection.mask_rcnn
-import methods.torchvision_utils as utils
-from methods.torchvision_coco_eval import CocoEvaluator
-from methods.torchvision_coco_utils import get_coco_api_from_dataset
+import vision.references.detection.utils as utils
+from vision.references.detection.coco_eval import CocoEvaluator
+from vision.references.detection.coco_utils import get_coco_api_from_dataset
 
 
 def train_one_epoch(
@@ -30,14 +30,25 @@ def train_one_epoch(
         data_loader, print_freq, header, is_train=True, epoch=epoch
     ):
         images = list(image["image"].to(device) for image in images)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        targets = [
+            {
+                k: v.to(device) if isinstance(v, torch.Tensor) else v
+                for k, v in t.items()
+            }
+            for t in targets
+        ]
         # with torch.autocast("cuda", enabled=scaler is not None):
         # loss_dict = model(images, targets)
-        with torch.cuda.amp.autocast(enabled=scaler is not None):
+        # losses = sum(loss for loss in loss_dict.values())
+        if torch.cuda.is_available():
+            with torch.cuda.amp.autocast(enabled=scaler is not None):
+                loss_dict = model(images, targets)
+                losses = sum(loss for loss in loss_dict.values())
+        else:
+            # with torch.cuda.amp.autocast(enabled=scaler is not None):
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
         del targets, images
-        # losses = sum(loss for loss in loss_dict.values())
 
         # reduce losses over all GPUs for logging purposes
         loss_dict_reduced = utils.reduce_dict(loss_dict)
@@ -101,10 +112,10 @@ def evaluate(model, data_loader, device):
     ):
         images = list(img["image"].to(device) for img in images)
 
-        if torch.backends.mps.is_available():
-            torch.mps.synchronize()
-        elif torch.cuda.is_available():
+        if torch.cuda.is_available():
             torch.cuda.synchronize()
+        elif torch.backends.mps.is_available():
+            torch.mps.synchronize()
         model_time = time.time()
         outputs = model(images)
         del images
@@ -112,10 +123,7 @@ def evaluate(model, data_loader, device):
         outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
         model_time = time.time() - model_time
 
-        res = {
-            target["image_id"].item(): output
-            for target, output in zip(targets, outputs)
-        }
+        res = {target["image_id"]: output for target, output in zip(targets, outputs)}
         evaluator_time = time.time()
         coco_evaluator.update(res)
         evaluator_time = time.time() - evaluator_time

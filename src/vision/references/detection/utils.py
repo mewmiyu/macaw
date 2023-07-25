@@ -1,10 +1,8 @@
 from collections import defaultdict, deque
 import datetime
-import pickle
 import time
 
 import torch
-import torch.cuda as cuda
 import torch.distributed as dist
 
 import errno
@@ -12,7 +10,7 @@ import os
 import wandb
 
 
-class SmoothedValue(object):
+class SmoothedValue:
     """Track a series of values and provide access to smoothed values over a
     window or the global series average.
     """
@@ -86,37 +84,8 @@ def all_gather(data):
     world_size = get_world_size()
     if world_size == 1:
         return [data]
-
-    # serialized to a Tensor
-    buffer = pickle.ducuda(data)
-    storage = torch.ByteStorage.from_buffer(buffer)
-    tensor = torch.ByteTensor(storage).to("cuda")
-
-    # obtain Tensor size of each rank
-    local_size = torch.tensor([tensor.numel()], device="cuda")
-    size_list = [torch.tensor([0], device="cuda") for _ in range(world_size)]
-    dist.all_gather(size_list, local_size)
-    size_list = [int(size.item()) for size in size_list]
-    max_size = max(size_list)
-
-    # receiving Tensor from all ranks
-    # we pad the tensor because torch all_gather does not support
-    # gathering tensors of different shapes
-    tensor_list = []
-    for _ in size_list:
-        tensor_list.append(torch.empty((max_size,), dtype=torch.uint8, device="cuda"))
-    if local_size != max_size:
-        padding = torch.empty(
-            size=(max_size - local_size,), dtype=torch.uint8, device="cuda"
-        )
-        tensor = torch.cat((tensor, padding), dim=0)
-    dist.all_gather(tensor_list, tensor)
-
-    data_list = []
-    for size, tensor in zip(size_list, tensor_list):
-        buffer = tensor.cpu().numpy().tobytes()[:size]
-        data_list.append(pickle.loads(buffer))
-
+    data_list = [None] * world_size
+    dist.all_gather_object(data_list, data)
     return data_list
 
 
@@ -132,7 +101,7 @@ def reduce_dict(input_dict, average=True):
     world_size = get_world_size()
     if world_size < 2:
         return input_dict
-    with torch.no_grad():
+    with torch.inference_mode():
         names = []
         values = []
         # sort the keys so that they are consistent across processes
@@ -147,7 +116,7 @@ def reduce_dict(input_dict, average=True):
     return reduced_dict
 
 
-class MetricLogger(object):
+class MetricLogger:
     def __init__(self, delimiter="\t"):
         self.meters = defaultdict(SmoothedValue)
         self.delimiter = delimiter
@@ -165,13 +134,13 @@ class MetricLogger(object):
         if attr in self.__dict__:
             return self.__dict__[attr]
         raise AttributeError(
-            "'{}' object has no attribute '{}'".format(type(self).__name__, attr)
+            f"'{type(self).__name__}' object has no attribute '{attr}'"
         )
 
     def __str__(self):
         loss_str = []
         for name, meter in self.meters.items():
-            loss_str.append("{}: {}".format(name, str(meter)))
+            loss_str.append(f"{name}: {str(meter)}")
         return self.delimiter.join(loss_str)
 
     def synchronize_between_processes(self):
@@ -202,6 +171,18 @@ class MetricLogger(object):
                     "max mem: {memory:.0f}",
                 ]
             )
+        elif torch.backends.mps.is_available():
+            log_msg = self.delimiter.join(
+                [
+                    header,
+                    "[{0" + space_fmt + "}/{1}]",
+                    "eta: {eta}",
+                    "{meters}",
+                    "time: {time}",
+                    "data: {data}",
+                    "max mem: {memory:.0f}",
+                ]
+            )
         else:
             log_msg = self.delimiter.join(
                 [
@@ -221,7 +202,7 @@ class MetricLogger(object):
             if i % print_freq == 0 or i == len(iterable) - 1:
                 eta_seconds = iter_time.global_avg * (len(iterable) - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
-                if cuda.is_available():
+                if torch.cuda.is_available():
                     print(
                         log_msg.format(
                             i,
@@ -233,9 +214,18 @@ class MetricLogger(object):
                             memory=torch.cuda.max_memory_allocated() / MB,
                         )
                     )
-                    if is_train:
-                        metrics_dict = {k: v.median for k, v in self.meters.items()}
-                        wandb.log(metrics_dict, step=len(iterable) * epoch + i)
+                elif torch.backends.mps.is_available():
+                    print(
+                        log_msg.format(
+                            i,
+                            len(iterable),
+                            eta=eta_string,
+                            meters=str(self),
+                            time=str(iter_time),
+                            data=str(data_time),
+                            memory=torch.mps.current_allocated_memory() / MB,
+                        )
+                    )
                 else:
                     print(
                         log_msg.format(
@@ -247,29 +237,21 @@ class MetricLogger(object):
                             data=str(data_time),
                         )
                     )
+
+                if is_train:
+                    metrics_dict = {k: v.median for k, v in self.meters.items()}
+                    wandb.log(metrics_dict, step=len(iterable) * epoch + i)
             i += 1
             end = time.time()
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
         print(
-            "{} Total time: {} ({:.4f} s / it)".format(
-                header, total_time_str, total_time / len(iterable)
-            )
+            f"{header} Total time: {total_time_str} ({total_time / len(iterable):.4f} s / it)"
         )
 
 
 def collate_fn(batch):
     return tuple(zip(*batch))
-
-
-def warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor):
-    def f(x):
-        if x >= warmup_iters:
-            return 1
-        alpha = float(x) / warmup_iters
-        return warmup_factor * (1 - alpha) + alpha
-
-    return torch.optim.lr_scheduler.LambdaLR(optimizer, f)
 
 
 def mkdir(path):
@@ -342,9 +324,7 @@ def init_distributed_mode(args):
 
     torch.cuda.set_device(args.gpu)
     args.dist_backend = "nccl"
-    print(
-        "| distributed init (rank {}): {}".format(args.rank, args.dist_url), flush=True
-    )
+    print(f"| distributed init (rank {args.rank}): {args.dist_url}", flush=True)
     torch.distributed.init_process_group(
         backend=args.dist_backend,
         init_method=args.dist_url,
