@@ -4,12 +4,14 @@ import time
 
 import torch
 import torchvision.models.detection.mask_rcnn
-import utils
-from coco_eval import CocoEvaluator
-from coco_utils import get_coco_api_from_dataset
+import vision.references.detection.utils as utils
+from vision.references.detection.coco_eval import CocoEvaluator
+from vision.references.detection.coco_utils import get_coco_api_from_dataset
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, scaler=None):
+def train_one_epoch(
+    model, optimizer, data_loader, device, epoch, print_freq, scaler=None
+):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value:.6f}"))
@@ -24,12 +26,29 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
             optimizer, start_factor=warmup_factor, total_iters=warmup_iters
         )
 
-    for images, targets in metric_logger.log_every(data_loader, print_freq, header):
-        images = list(image.to(device) for image in images)
-        targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} for t in targets]
-        with torch.cuda.amp.autocast(enabled=scaler is not None):
+    for images, targets in metric_logger.log_every(
+        data_loader, print_freq, header, is_train=True, epoch=epoch
+    ):
+        images = list(image["image"].to(device) for image in images)
+        targets = [
+            {
+                k: v.to(device) if isinstance(v, torch.Tensor) else v
+                for k, v in t.items()
+            }
+            for t in targets
+        ]
+        # with torch.autocast("cuda", enabled=scaler is not None):
+        # loss_dict = model(images, targets)
+        # losses = sum(loss for loss in loss_dict.values())
+        if torch.cuda.is_available():
+            with torch.cuda.amp.autocast(enabled=scaler is not None):
+                loss_dict = model(images, targets)
+                losses = sum(loss for loss in loss_dict.values())
+        else:
+            # with torch.cuda.amp.autocast(enabled=scaler is not None):
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
+        del targets, images
 
         # reduce losses over all GPUs for logging purposes
         loss_dict_reduced = utils.reduce_dict(loss_dict)
@@ -56,6 +75,8 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
 
         metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
+
+        del loss_dict, loss_dict_reduced
 
     return metric_logger
 
@@ -86,13 +107,18 @@ def evaluate(model, data_loader, device):
     iou_types = _get_iou_types(model)
     coco_evaluator = CocoEvaluator(coco, iou_types)
 
-    for images, targets in metric_logger.log_every(data_loader, 100, header):
-        images = list(img.to(device) for img in images)
+    for images, targets in metric_logger.log_every(
+        data_loader, 100, header, is_train=False
+    ):
+        images = list(img["image"].to(device) for img in images)
 
         if torch.cuda.is_available():
             torch.cuda.synchronize()
+        elif torch.backends.mps.is_available():
+            torch.mps.synchronize()
         model_time = time.time()
         outputs = model(images)
+        del images
 
         outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
         model_time = time.time() - model_time
