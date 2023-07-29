@@ -15,11 +15,13 @@ def macaw():
 
     # Config:  # TODO: Outsource to base.yaml
     path_masks = '../masks/'
+    path_overlays = '../masks/overlay/'
     input = '../imgs/VID_20230612_172955.mp4'  # 0  #
 
     use_feature = 'SIFT'
 
     masks = utils.load_masks(path_masks)
+    overlays = utils.load_overlays(path_overlays)
 
     if type(input) is int:
         fvs = utils.webcam_handler()  #
@@ -56,23 +58,26 @@ def macaw():
             break
 
         frame = utils.resize(frame, width=450)
+        frame_size = frame.shape
         frame_umat = cv.UMat(frame)
         frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         frame_gray = cv.UMat(cv.GaussianBlur(frame_gray, (5, 5), 0))
 
-        kp, des = compute_feature(frame_gray)
 
-        boxes, labels, scores = detector.run_detector(frame)  # , showHits=True  # TODO: Do RGB channels nbeed to be swapped? rgb->bgr?
+        boxes, labels, scores = detector.run_detector(frame)  # , showHits=True
         hit, label, box = detector.filter_hits(boxes, labels, scores)
-        # # TODO: Filter + Crop boxes
+        # TODO: Filter + Crop boxes
+        # TODO: Check order of the new box! (xy min max)
         box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int).flatten()
-        crop_offset = np.array((0, 0)).reshape((1, 1, 2))
+        # crop_offset = np.array(box_pixel[1], box_pixel[0]).reshape((1, 1, 2))
         if True:  # hit and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0:  # hit and non-zero patch
             cropped = utils.crop_img(frame, *box_pixel.flatten())  # Test cropping and apply
             valid = False
             # tracking:
             if count % matching_rate != 0 and pts_f is not None and len(pts_f) >0:
                 pts_f, pts_m, valid = features.track(last_frame_gray, frame_gray, pts_f, pts_m)
+
+            kp, des = compute_feature(frame_gray)
 
             # TODO: UMat
             # uframe = cv.UMat(cropped)  # cropped #
@@ -92,7 +97,7 @@ def macaw():
                 # TODO: Render meta data
 
         # show the frame and update the FPS counter
-        rendering.render_text(frame, "FPS: {:.2f}".format(1.0 / (time.time() - time_start)))
+        rendering.render_text(frame, "FPS: {:.2f}".format(1.0 / (time.time() - time_start)), (10, frame_size[0] - 10))
 
         # display the size of the queue on the frame
         cv.imshow('frame', frame)

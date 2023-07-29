@@ -1,5 +1,6 @@
 import cv2 as cv
 import numpy as np
+import utils
 
 from PIL import Image
 from PIL import ImageColor
@@ -21,8 +22,19 @@ def render_matches(img, kp, img2, kp2, matches):
 
 
 # function for either rendering the box with metadata or getting the result from ogre
-def render_metadata(img: np.ndarray) -> np.ndarray:
-    # TODO: render metadata
+def render_metadata(img: np.ndarray, label: str, pos=(0, 0)) -> np.ndarray:
+    # DATA = namedtuple("DATA", ["name", "id", "address", "info", "box_size"])
+    # https://machinelearningknowledge.ai/put-text-on-image-in-opencv-python-using-cv2-puttext-with-examples/?utm_content=cmp-true
+    # todo change colors and add a box
+    pos = (0, 0)
+    size = utils.METADATA[label].box_size
+    contour = [[pos[0], pos[1]], [pos[0]+ size[0], pos[1]], [pos[0]+size[0], pos[1]+size[1]], [pos[0], pos[1]+size[1]]]
+    # render_contours(img, contour, color=(0, 255, 0))
+
+    cv.putText(img, utils.METADATA[label].name, (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    cv.putText(img, utils.METADATA[label].id, (10, 50), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    cv.putText(img, utils.METADATA[label].address, (10, 70), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    cv.putText(img, utils.METADATA[label].info, (10, 90), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     return img
 
 

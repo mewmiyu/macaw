@@ -18,7 +18,7 @@ import imutils
 from collections import namedtuple
 
 Mask = namedtuple("Mask", ["name", "kp", "des", "box", "box_points"])
-DATA = namedtuple("DATA", ["name", "id", "address", "info"])
+DATA = namedtuple("DATA", ["name", "id", "address", "info", "box_size"])
 
 METADATA = {}
 
@@ -59,7 +59,9 @@ def load_img(filename: str, size: tuple = None) -> tuple[np.ndarray, np.ndarray]
     gray = np.float32(cv.cvtColor(img, cv.COLOR_BGR2GRAY))
     return img, gray
 
-
+"""
+     min_y: int, min_x: int, max_y: int, max_x: int
+"""
 def crop_img(img: np.ndarray, min_y: int, min_x: int, max_y: int, max_x: int) -> np.ndarray:
     return img[min_x:max_x, min_y:max_y, :]
 
@@ -77,16 +79,24 @@ def to_grayscale(img):
 """
 def load_masks(path, compute_feature=features.compute_features_sift):
     masks = {}
-    for filename in glob.glob(path + '*.jpg'):  # assuming gif
-        mask = filename  # path + 'mask_Hauptgebaeude_no_tree.jpg'  # TODO: Adapt for multiple masks
-        img_mask, gray_mask = load_img(mask)
+    for filename in glob.glob(path + '*.jpg'):
+        img_mask, gray_mask = load_img(filename)
         kp_mask, des_mask = compute_feature(img_mask)
         h, w = gray_mask.shape
         name = Path(filename).stem
         masks[name] = Mask(name, kp_mask, des_mask, img_mask.shape[:2],  np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2))
-        METADATA[name] = DATA("Dummy", -1, "Holzweg 42", "Geht dich gar nichts an!")
+        METADATA[name] = DATA("Dummy", "-1", "Holzweg 42", "Geht dich gar nichts an!", (200, 90))
     return masks
 
+
+def load_overlays(path, width=None):
+    overlays = {}
+    for filename in glob.glob(path + '*.png'):
+        img, _ = load_img(filename)
+        if width is not None:
+            img = resize(img, width=width)
+        overlays[Path(filename).stem] = img
+    return overlays
 
 """
     This function loads all images from the data directory. 
