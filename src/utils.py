@@ -18,6 +18,9 @@ import imutils
 from collections import namedtuple
 
 Mask = namedtuple("Mask", ["name", "kp", "des", "box", "box_points"])
+DATA = namedtuple("DATA", ["name", "id", "address", "info"])
+
+METADATA = {}
 
 def vid_handler(file):
     ap = argparse.ArgumentParser()
@@ -81,6 +84,7 @@ def load_masks(path, compute_feature=features.compute_features_sift):
         h, w = gray_mask.shape
         name = Path(filename).stem
         masks[name] = Mask(name, kp_mask, des_mask, img_mask.shape[:2],  np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2))
+        METADATA[name] = DATA("Dummy", -1, "Holzweg 42", "Geht dich gar nichts an!")
     return masks
 
 
