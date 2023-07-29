@@ -94,6 +94,8 @@ def train(cfg):
     dataset_test = CampusDataset(annotation_file, get_transform(train=False))
 
     # split the dataset in train and test set
+    # since we apply different transformations to the train and test sets we need to
+    # manually create the subsets, rather than use torch.utils.data.random_split()
     dataset_size = len(dataset)
     indices = torch.randperm(dataset_size).tolist()
     train_set_size = int(dataset_size * (1 - test_proportion))

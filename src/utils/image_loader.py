@@ -1,15 +1,24 @@
 import os
+from typing import Any
 
 from PIL import Image
 from utils.preprocess import get_transform
 
 
-class ImageLoader:
+class ImageProvider:
     def __init__(self) -> None:
-        self.supercategories = ["hauptgebäude", "karo5", "piloty", "ULB"]
-        self.subcategories = ["right", "back", "left", "front"]
+        pass
 
-    def __call__(self, path_to_data):
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        raise NotImplementedError()
+
+
+class DatasetImageProvider(ImageProvider):
+    def __init__(self, folders, subfolders) -> None:
+        self.supercategories = folders
+        self.subcategories = subfolders
+
+    def __call__(self, data_path):
         """
         This function loads all images from the data directory.
         Each new directory creates a new label, so images from
@@ -21,7 +30,7 @@ class ImageLoader:
         images = []
         file_names = []
         for supercategory in self.supercategories:
-            supercategory_path = os.path.join(path_to_data, supercategory)
+            supercategory_path = os.path.join(data_path, supercategory)
             subdirs = [
                 dir
                 for dir in os.listdir(supercategory_path)
@@ -37,6 +46,7 @@ class ImageLoader:
                     file
                     for file in os.listdir(subcategory_path)
                     if os.path.isfile(os.path.join(subcategory_path, file))
+                    and file.lower() != ".ds_store"
                 ]
                 if len(files) == 0:
                     continue

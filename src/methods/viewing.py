@@ -1,128 +1,92 @@
 import matplotlib.pyplot as plt
-import numpy as np
-import time
-import torch
 import torchvision
-
-torchvision.disable_beta_transforms_warning()
-import torchvision.transforms.v2 as T
-
-from datasets.campus_dataset import CampusDataset
-import vision.references.detection.utils as utils
+from collections.abc import Callable
+from typing import Any, Tuple
 
 
-def get_transform(train):
-    transforms = []
-    transforms.append(T.Resize(640))
-    # converts the image, a PIL image, into a PyTorch Tensor
-    transforms.append(T.ToTensor())
-    if train:
-        # during training, randomly flip the training images
-        # and ground-truth for data augmentation
-        # transforms.append(T.RandomHorizontalFlip(0.5))
-        pass
-    return T.Compose(transforms)
+class ImageViewer:
+    def __init__(self, image_provider: Callable[[], Tuple[Any, ...]]) -> None:
+        self.image_provider = image_provider
 
-
-class Viewer:
-    def __init__(self, device="cpu") -> None:
-        self.device = device
-        self.model = torch.load("faster_rcnn-working-epoch.pt").to(self.device)
-        self.model.eval()
-
-        dataset = CampusDataset("annotations_full.json", get_transform(train=True))
-        self.category_labels = {
-            cat["id"]: cat["name"] for cat in dataset.categories.values()
-        }
-        batch_size = 1
-        self.data_loader = torch.utils.data.DataLoader(
-            dataset,
-            batch_size=batch_size,
-            shuffle=True,
-            num_workers=4,
-            collate_fn=utils.collate_fn,
-        )
-
-    def run_inference(self):
-        self.data, targets = next(iter(self.data_loader))
-        self.images = list(image["image"].to(self.device) for image in self.data)
-        self.image_names = list(image["filename"] for image in self.data)
-        targets = [{k: v for k, v in t.items()} for t in targets]
-        self.title = self.image_names[0]
-        start_time = time.time()
-        self.predictions = self.model(self.images)  # Returns predictions
-        inference_time = time.time() - start_time
-        print("Inference time", inference_time)
-
-        return (
-            np.array(self.images[0].detach().to("cpu").permute((1, 2, 0))),
-            targets[0]["boxes"],
-        )
+        fig = plt.figure(figsize=(10, 10))
+        fig.canvas.mpl_connect("button_press_event", self.on_click)
+        fig.canvas.mpl_connect("key_press_event", self.on_press)
+        self.last_key_press = ""
 
     def __call__(self):
-        image, target = self.run_inference()
+        image, target, prediction, title = self.image_provider()
 
         fig = plt.figure(figsize=(10, 10))
         fig.canvas.mpl_connect("key_press_event", self.on_press)
-        # plt.title(self.title)
-        self.show_image(image, target)
+        self.show_image(image, target, prediction, title)
         plt.show(block=True)
 
     def on_press(self, event):
-        # plt.close()
-        if event.key == "n":
-            image, target = self.run_inference()
-            self.show_image(image, target)
+        if self.last_key_press == "escape" and event.key == "escape":
+            quit()
+        else:
+            self.last_key_press = event.key
 
-    def show_image(self, image, target):
-        i = 0
+        if event.key == "n":
+            image, target, prediction = self.image_provider()
+            self.show_image(image, target, prediction)
+
+    def on_click(self, event):
+        pass
+
+    def show_image(self, image, target, prediction=None, title=""):
         plt.clf()
         plt.imshow(image, zorder=1)
-        plt.title(self.title)
-        print(f"Annotation: {target[0]}")
-        (minx, miny, width, height) = target[0]
-        maxx = minx + width
-        maxy = miny + height
-        plt.plot([minx, minx], [miny, maxy], "blue", zorder=2)
-        plt.plot([maxx, maxx], [miny, maxy], "blue", zorder=2)
-        plt.plot([minx, maxx], [miny, miny], "blue", zorder=2)
-        plt.plot([minx, maxx], [maxy, maxy], "blue", zorder=2)
-        plt.draw()
+        plt.title(title)
+
+        if target is not None:
+            print(f"[INFO] Annotation:")
+            self.draw_bbox(*target[0])
+
+        if prediction is None:
+            return
+
+        print(f"[INFO] Predictions (out of {len(prediction['boxes'])}):")
         # loop over the detections
-        for j, bbox in enumerate(self.predictions[i]["boxes"]):
+        for j, bbox in enumerate(prediction["boxes"]):
             # extract the confidence (i.e., probability) associated with the
             # prediction
-            confidence = self.predictions[i]["scores"][j]
-            print(f"Confidence: {confidence}")
+            confidence = prediction["scores"][j]
             # filter out weak detections by ensuring the confidence is
             # greater than the minimum confidence
             if confidence > 0.7:
+                print(f"[INFO] Confidence: {confidence}")
                 # extract the index of the class label from the detections,
                 # then compute the (x, y)-coordinates of the bounding box
                 # for the object
-                idx = int(self.predictions[i]["labels"][j])
-                bbox = bbox.detach().cpu().numpy()
-                (minx, miny, width, height) = bbox.astype("int")
-                multiplication_factor = 1  # (3000 / 640)
-                minx = minx * multiplication_factor
-                miny = miny * multiplication_factor
-                maxx = minx + width * multiplication_factor
-                maxy = miny + height * multiplication_factor
-                print(f"[INFO] Bounding Box in int: {(miny, minx, maxy, maxx)}")
-
-                plt.plot([minx, minx], [miny, maxy], "red", zorder=2)
-                plt.plot([maxx, maxx], [miny, maxy], "red", zorder=2)
-                plt.plot([minx, maxx], [miny, miny], "red", zorder=2)
-                plt.plot([minx, maxx], [maxy, maxy], "red", zorder=2)
-                plt.draw()
-
+                idx = int(prediction["labels"][j])
                 label = "{}: {:.2f}%".format(
-                    self.category_labels[idx], confidence * 100
+                    self.image_provider.category_labels[idx], confidence * 100
                 )
                 # display the prediction to our terminal
                 print("[INFO] {}".format(label))
-                print(f"[INFO] Bounding-Box: {bbox}")
-                # # draw the bounding box and label on the image
-                # cv2.rectangle(orig, (startX, startY), (endX, endY), COLORS[idx], 2)
-                y = maxy - 15 if maxy - 15 > 15 else maxy + 15
-                plt.text(minx, y, label, color="red")
+
+                # draw the bounding box and label on the image
+                bbox = bbox.detach().cpu().numpy()
+                self.draw_bbox(*bbox, format="XYXY", color="red")
+
+                y = bbox[3] - 15 if bbox[3] - 15 > 15 else bbox[3] + 15
+                plt.text(bbox[0], y, label, color="red")
+
+    def draw_bbox(self, minx, miny, width, height, format="XYWH", color="blue"):
+        if format == "XYWH":
+            maxx = minx + width
+            maxy = miny + height
+        elif format == "XYXY":
+            maxx = width
+            maxy = height
+        else:
+            raise ValueError("We only currently only support XYWH and XYXY formats")
+
+        print(f"[INFO] Bounding Box: {(miny, minx, maxy, maxx)}")
+        # cv2.rectangle(orig, (startX, startY), (endX, endY), COLORS[idx], 2)
+        plt.plot([minx, minx], [miny, maxy], color, zorder=2)
+        plt.plot([maxx, maxx], [miny, maxy], color, zorder=2)
+        plt.plot([minx, maxx], [miny, miny], color, zorder=2)
+        plt.plot([minx, maxx], [maxy, maxy], color, zorder=2)
+        plt.draw()

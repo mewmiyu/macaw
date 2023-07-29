@@ -6,11 +6,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from typing import Tuple
-from utils.image_loader import ImageLoader
+from methods.viewing import ImageViewer
+from utils.image_loader import DatasetImageProvider
 
 
-class Labeler:
+class Labeler(ImageViewer):
     def __init__(self, annotations_path):
+        super().__init__(annotations_path)
+
         self.image = np.zeros((300, 300), dtype=np.float32)
         self.categories = []
         self.category_id = -1
@@ -33,9 +36,9 @@ class Labeler:
         self.coords_x = []
         self.coords_y = []
 
-    def __call__(self, folder: str, mode: str):
-        loader = ImageLoader()
-        images, labels, filenames, self.labeled_images["categories"] = loader(folder)
+    def __call__(self, data_path: str, folders: str, subfolders: str, mode: str):
+        loader = DatasetImageProvider(folders, subfolders)
+        images, labels, filenames, self.labeled_images["categories"] = loader(data_path)
         for i, image in enumerate(images):
             self.coords_x = []
             self.coords_y = []
@@ -50,14 +53,8 @@ class Labeler:
                 continue
 
             if not ann_exists and img is None:
-                self.image_id = (
-                    max(
-                        [
-                            int(img_obj["id"])
-                            for img_obj in self.labeled_images["images"]
-                        ]
-                    )
-                    + 1
+                self.image_id = 1 + max(
+                    [int(img_obj["id"]) for img_obj in self.labeled_images["images"]]
                 )
                 self.labeled_images["images"].append(
                     {
@@ -68,15 +65,14 @@ class Labeler:
                     }
                 )
 
-            fig = plt.figure(figsize=(10, 10))
-            fig.canvas.mpl_connect("button_press_event", self.onclick)
-            fig.canvas.mpl_connect("key_press_event", self.on_press)
-            plt.title(self.title)
-            plt.imshow(self.image, zorder=1)
             if ann_exists and mode == "review":
                 bbox = ann["bbox"]
-                self.draw_bbox(bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3])
+                target = (bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3])
+            else:
+                target = None
+            self.show_image(self.image, target, title=self.title)
             plt.show(block=True)
+
             self.image_id += 1
 
     def on_press(self, event):
@@ -89,10 +85,7 @@ class Labeler:
         if event.key == "r":
             self.coords_x = []
             self.coords_y = []
-            plt.clf()
-            plt.imshow(self.image, zorder=1)
-            plt.title(self.title)
-            plt.draw()
+            self.show_image(self.image, None, title=self.title)
         if event.key == "q":
             self.save_annotations(quit_on_success=True)
         if event.key == "b":
@@ -103,16 +96,12 @@ class Labeler:
             width = maxx - minx
             height = maxy - miny
 
-            plt.clf()
+            self.show_image(self.image, (minx, miny, width, height), title=self.title)
             plt.scatter(self.coords_x, self.coords_y, zorder=2)
-            plt.title(self.title)
-            plt.imshow(self.image, zorder=1)
-            self.draw_bbox(minx, miny, maxx, maxy)
 
             self.annotation_id = 1 + max(
                 [*[ann["id"] for ann in self.labeled_images["annotations"]], -1]
             )
-
             new_annotation = {
                 "id": self.annotation_id,
                 "image_id": self.image_id,
@@ -160,13 +149,6 @@ class Labeler:
                 return False, image, None
 
         return False, None, None  # Annotation does not exist
-
-    def draw_bbox(self, minx, miny, maxx, maxy):
-        plt.plot([minx, minx], [miny, maxy], "red", zorder=2)
-        plt.plot([maxx, maxx], [miny, maxy], "red", zorder=2)
-        plt.plot([minx, maxx], [miny, miny], "red", zorder=2)
-        plt.plot([minx, maxx], [maxy, maxy], "red", zorder=2)
-        plt.draw()
 
     def save_annotations(self, quit_on_success=False):
         try:

@@ -15,13 +15,19 @@ TRAINING:
     GAMMA: 0.1
     NUM_WORKERS: 4
   DEVICE: "cuda"
+EVALUATION:
+  CHECKPOINT: "faster_rcnn-working-epoch.pt"
+  BATCH_SIZE: 1
+  NUM_WORKERS: 2
+  DEVICE: "cuda"
 DATA:
+  PATH: "data"
   ANNOTATIONS: "annotations_full.json"
-  SUPERCATEGORIES: ["hauptgebäude"] #, "karo5", "piloty"]
+  SUPERCATEGORIES: ["hauptgebäude", "karo5", "piloty", "ULB"]
   SUBCATEGORIES: ["right", "back", "left", "front"]
 METHOD:
-  NAME: "visualise" # one of train, visualise, execute, label
-  MODE: "annotate" # either "annotate" or "review"
+  NAME: "view" # one of execute, train, view, label
+  MODE: "annotate" # if NAME=="label", either "annotate" or "review"
 WANDB:
   ENTITY: "macaw"
   PROJECT: "augmented-vision"

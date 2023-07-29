@@ -2,7 +2,7 @@ import architectures.siamese_network as siamese_network
 import torch
 import numpy as np
 
-from utils.image_loader import ImageLoader
+from utils.image_loader import DatasetImageProvider
 
 
 def train(cnfg):
@@ -11,7 +11,7 @@ def train(cnfg):
     device = training_cnfg["DEVICE"]
     parameters = training_cnfg["PARAMETERS"]
     # network.to(device)
-    image_loader = ImageLoader()
+    image_loader = DatasetImageProvider(["piloty"], ["right"])
     images, _, labels, _ = image_loader("data")
 
     labels = torch.from_numpy(labels)

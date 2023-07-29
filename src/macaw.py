@@ -13,7 +13,8 @@ import numpy as np
 import cv2 as cv
 import time
 
-from methods.viewing import Viewer
+from methods.viewing import ImageViewer
+from methods.eval import TorchImageProvider
 
 
 def macaw():
@@ -88,17 +89,30 @@ if __name__ == "__main__":
         exit(-1)
     cfg = utils_old.read_yaml(args.config)
     match cfg["METHOD"]["NAME"]:
-        case "train":
-            object_detection.train(cfg)
-        case "visualise":
-            viewer = Viewer()
-            viewer()
         case "execute":
             macaw()
+        case "train":
+            object_detection.train(cfg)
+        case "view":
+            eval_cfg = dict(
+                annotations="annotations_full.json",
+                model_checkpoint=cfg["EVALUATION"]["CHECKPOINT"],
+                device=cfg["EVALUATION"]["DEVICE"],
+                batch_size=cfg["EVALUATION"]["BATCH_SIZE"],
+                num_workers=cfg["EVALUATION"]["NUM_WORKERS"],
+            )
+            image_provider = TorchImageProvider(**eval_cfg)
+            viewer = ImageViewer(image_provider)
+            viewer()
         case "label":
             labeler = labeling.Labeler("annotations_full.json")
             # We NEED to load all data, otherwise we won't have correct labels
-            labeler("data", cfg["METHOD"]["MODE"])
+            labeler(
+                cfg["DATA"]["PATH"],
+                cfg["DATA"]["SUPERCATEGORIES"],
+                cfg["DATA"]["SUBCATEGORIES"],
+                cfg["METHOD"]["MODE"],
+            )
         case _:
             print(
                 f"Unknown method: {cfg['METHOD']['NAME']}. Please use one of the following: train, visualise, execute, label"
