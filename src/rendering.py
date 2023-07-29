@@ -44,8 +44,15 @@ def render_img(img = None, ):
     return img
 
 
-def render_contours(img: np.ndarray, contours) -> np.ndarray:
-    return cv.drawContours(img, contours, 0, (0, 255, 0), 2)
+def render_contours(img: np.ndarray, contours, color=(0, 255, 0)) -> np.ndarray:
+    return cv.drawContours(img, [contours], 0, color, 2)
+
+
+def render_fill_contours(img: np.ndarray, contours, color=(0, 255, 0), alpha=0.5) -> np.ndarray:
+    layer = cv.fillPoly(img.get(), [contours], color=color)
+
+    return cv.addWeighted(img, alpha, layer, 1-alpha, 0)
+
 
 
 def render_matches(img, kp, img2, kp2, matches):

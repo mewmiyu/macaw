@@ -62,12 +62,13 @@ def macaw():
 
         kp, des = compute_feature(frame_gray)
 
-        # boxes, labels, scores = detector.run_detector(frame)  # , showHits=True  # TODO: Do RGB channels nbeed to be swapped? rgb->bgr?
-        # hit, label, box = detector.filter_hits(boxes, labels, scores)
+        boxes, labels, scores = detector.run_detector(frame)  # , showHits=True  # TODO: Do RGB channels nbeed to be swapped? rgb->bgr?
+        hit, label, box = detector.filter_hits(boxes, labels, scores)
         # # TODO: Filter + Crop boxes
-        # box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int).flatten()
+        box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int).flatten()
+        crop_offset = np.array((0, 0)).reshape((1, 1, 2))
         if True:  # hit and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0:  # hit and non-zero patch
-            # cropped = utils.crop_img(frame, *box_pixel.flatten())  # Test cropping and apply
+            cropped = utils.crop_img(frame, *box_pixel.flatten())  # Test cropping and apply
             valid = False
             # tracking:
             if count % matching_rate != 0 and pts_f is not None and len(pts_f) >0:
@@ -83,9 +84,11 @@ def macaw():
 
             last_frame_gray = frame_gray
             # homography
-            dst = features.calc_bounding_box(matches, masks[mask_id], pts_f, pts_m)
-            if dst is not None:
-                frame = rendering.render_contours(frame_umat, [np.int32(dst)])
+            bbox = features.calc_bounding_box(matches, masks[mask_id], pts_f, pts_m)
+            if bbox is not None:
+
+                frame = rendering.render_contours(frame_umat, np.int32(bbox))
+                frame = rendering.render_fill_contours(frame, np.int32(bbox))
                 # TODO: Render meta data
 
         # show the frame and update the FPS counter
