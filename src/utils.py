@@ -2,7 +2,9 @@ import os
 import torchvision.transforms as transforms
 import numpy as np
 import yaml
-
+import features
+import glob
+from pathlib import Path
 
 from PIL import Image
 
@@ -13,6 +15,9 @@ from imutils.video import WebcamVideoStream
 import cv2 as cv
 import pickle
 import imutils
+from collections import namedtuple
+
+Mask = namedtuple("Mask", ["name", "kp", "des", "box", "box_points"])
 
 def vid_handler(file):
     ap = argparse.ArgumentParser()
@@ -63,6 +68,18 @@ def resize(img, width):
 def to_grayscale(img):
     return cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
+"""
+    Load all images from 'path', calculate keypoints and feature-descriptors and return them aas list(MASK)
+"""
+def load_masks(path, compute_feature=features.compute_features_sift):
+    masks = []
+    for filename in glob.glob(path + '*.jpg'):  # assuming gif
+        mask = filename  # path + 'mask_Hauptgebaeude_no_tree.jpg'  # TODO: Adapt for multiple masks
+        img_mask, gray_mask = load_img(mask)
+        kp_mask, des_mask = compute_feature(img_mask)
+        h, w = gray_mask.shape
+        masks.append(Mask(Path(filename).stem, kp_mask, des_mask, img_mask.shape[:2],  np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)))
+    return masks
 
 
 """

@@ -5,9 +5,7 @@ from imutils.video import FPS
 import time
 
 import utils
-from collections import namedtuple
 
-Mask = namedtuple("Mask", ["kp", "des", "box", "box_points"])
 TRACKING_THRESHOLD = 20
 MATCHING_THRESHOLD = 20
 MATCH_DISTANCE = 0.7
@@ -87,7 +85,7 @@ def estimate_homography(pts_src, points_st):
     return m, mask
 
 
-def match(des, masks: list[Mask], use_feature='SIFT'):
+def match(des, masks, use_feature='SIFT'):
     matches_best = None
     matches_best_nr = -1
     mask_id = -1

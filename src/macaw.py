@@ -18,11 +18,13 @@ def macaw():
     compute_feature = features.compute_features_sift
     use_feature = 'SIFT'
 
+    masks = utils.load_masks('../masks/')
+
     img_mask, gray_mask = utils.load_img(mask)
     kp_mask, des_mask = compute_feature(img_mask)
     h, w = gray_mask.shape
-    masks = [features.Mask(kp_mask, des_mask, img_mask.shape[:2],  np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
-)]
+    masks = [utils.Mask("test", kp_mask, des_mask, img_mask.shape[:2],  np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2))]
+
 
     if type(input) is int:
         fvs = utils.webcam_handler()  #
