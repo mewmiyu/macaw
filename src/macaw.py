@@ -12,19 +12,14 @@ import time
 
 
 def macaw():
+
     # Config:  # TODO: Outsource to base.yaml
-    mask = '../masks/mask_Hauptgebaeude_no_tree.jpg'  # TODO: Adapt for multiple masks
+    path_masks = '../masks/'
     input = '../imgs/VID_20230612_172955.mp4'  # 0  #
-    compute_feature = features.compute_features_sift
+
     use_feature = 'SIFT'
 
-    masks = utils.load_masks('../masks/')
-
-    img_mask, gray_mask = utils.load_img(mask)
-    kp_mask, des_mask = compute_feature(img_mask)
-    h, w = gray_mask.shape
-    masks = [utils.Mask("test", kp_mask, des_mask, img_mask.shape[:2],  np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2))]
-
+    masks = utils.load_masks(path_masks)
 
     if type(input) is int:
         fvs = utils.webcam_handler()  #

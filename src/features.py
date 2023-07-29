@@ -85,18 +85,21 @@ def estimate_homography(pts_src, points_st):
     return m, mask
 
 
-def match(des, masks, use_feature='SIFT'):
+def match(des, masks, target='mask_Hauptgebaeude_no_tree', use_feature='SIFT'):
     matches_best = None
     matches_best_nr = -1
-    mask_id = -1
+    mask_id = target  # TODO: Remove
     for idx, mask in enumerate(masks):
+        mask = masks[target]  # TODO: Remove
         matches_accepted = match_flann(des, mask.des)
 
         if len(matches_accepted) > matches_best_nr:
             matches_best = matches_accepted
             matches_best_nr = len(matches_accepted)
             mask_id = idx
+            mask_id = target  # TODO: Remove
         # return src_pts
+        break  # TODO: Remove
     return matches_best, mask_id  # TODO: Support for list of masks -> return best match
 
 

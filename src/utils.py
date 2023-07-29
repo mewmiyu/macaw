@@ -68,17 +68,19 @@ def resize(img, width):
 def to_grayscale(img):
     return cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
+
 """
     Load all images from 'path', calculate keypoints and feature-descriptors and return them aas list(MASK)
 """
 def load_masks(path, compute_feature=features.compute_features_sift):
-    masks = []
+    masks = {}
     for filename in glob.glob(path + '*.jpg'):  # assuming gif
         mask = filename  # path + 'mask_Hauptgebaeude_no_tree.jpg'  # TODO: Adapt for multiple masks
         img_mask, gray_mask = load_img(mask)
         kp_mask, des_mask = compute_feature(img_mask)
         h, w = gray_mask.shape
-        masks.append(Mask(Path(filename).stem, kp_mask, des_mask, img_mask.shape[:2],  np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)))
+        name = Path(filename).stem
+        masks[name] = Mask(name, kp_mask, des_mask, img_mask.shape[:2],  np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2))
     return masks
 
 
@@ -112,6 +114,7 @@ def load_data(path_to_data):
                 images.append(input_tensor)
     return images, np.array(labels)
 
+
 """
     This function generates a dataset based on triplets. It returns
     a numpy array of size [batch_amount, batch_size, 3]. Each entry 
@@ -142,6 +145,7 @@ def gen_triplet_dataset(labels, batch_size, batch_amount):
             batch.append([anchor, positive, negative])
         dataset.append(np.array(batch))
     return np.array(dataset)
+
 
 """
     Reads in a yaml config file from a filepath
