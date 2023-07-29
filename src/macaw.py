@@ -6,7 +6,6 @@ import methods.train as train
 import methods.labeling as labeling
 import utils_old
 import feature_matching
-import detector
 import rendering
 
 import numpy as np
@@ -14,7 +13,7 @@ import cv2 as cv
 import time
 
 from methods.viewing import ImageViewer
-from methods.eval import TorchImageProvider
+from methods.eval import TorchImageProvider, PredictionsProvider
 
 
 def macaw():
@@ -44,10 +43,17 @@ def macaw():
             break
         frame = utils_old.resize(frame, width=450)
 
-        boxes, labels, scores = detector.run_detector(
-            frame
-        )  # , showHits=True  # TODO: Do RGB channels nbeed to be swapped? rgb->bgr?
-        hit, label, box = detector.filter_hits(boxes, labels, scores)
+        model_predictor = PredictionsProvider(
+            "faster_rcnn-working-epoch.pt", "annotations_full.json"
+        )
+        _, _, prediction, _ = model_predictor(frame, silent=False)
+        if len(prediction["boxes"]) > 0:
+            box = np.array(prediction["boxes"][0].detach().to("cpu"))
+            label = model_predictor.category_labels[prediction["labels"][0].item()]
+            pass
+        # hit, label, box = detector.filter_hits(
+        #     prediction["boxes"], prediction["labels"], prediction["scores"]
+        # )
         # TODO: Filter + Crop boxes
         if hit:  # hit
             box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int)

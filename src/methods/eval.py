@@ -63,7 +63,7 @@ class TorchImageProvider(ImageProvider):
 
 
 class PredictionsProvider(ImageProvider):
-    def __init__(self, model_checkpoint=None, device="cpu") -> None:
+    def __init__(self, model_checkpoint=None, annotations=None, device="cpu") -> None:
         super().__init__()
 
         self.device = device
@@ -73,8 +73,15 @@ class PredictionsProvider(ImageProvider):
         else:
             raise ValueError(f"No model checkpoint was provided!")
 
-    def __call__(self, image: NDArray, silent=True) -> Any:
-        image_tensor = torch.from_numpy(image).to(self.device)
+        if annotations is not None:
+            dataset = CampusDataset(annotations, get_transform(train=False))
+            self.category_labels = {
+                cat["id"]: cat["name"] for cat in dataset.categories.values()
+            }
+
+    def __call__(self, image: NDArray[np.uint8], silent=True):
+        image_float = image.astype(np.float32) / 255.0
+        image_tensor = torch.from_numpy(image_float).to(self.device).permute((2, 0, 1))
         self.images = [image_tensor]
 
         start_time = time.time()
