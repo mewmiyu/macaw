@@ -16,8 +16,6 @@ class ImageViewer:
     def __call__(self):
         image, target, prediction, title = self.image_provider()
 
-        fig = plt.figure(figsize=(10, 10))
-        fig.canvas.mpl_connect("key_press_event", self.on_press)
         self.show_image(image, target, prediction, title)
         plt.show(block=True)
 
@@ -28,8 +26,8 @@ class ImageViewer:
             self.last_key_press = event.key
 
         if event.key == "n":
-            image, target, prediction = self.image_provider()
-            self.show_image(image, target, prediction)
+            image, target, prediction, title = self.image_provider()
+            self.show_image(image, target, prediction, title=title)
 
     def on_click(self, event):
         pass
