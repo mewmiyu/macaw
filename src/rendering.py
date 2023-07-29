@@ -38,8 +38,8 @@ def render_metadata(img: np.ndarray, label: str, pos=(0, 0)) -> np.ndarray:
     return img
 
 
-def render_text(img: np.ndarray, txt: str) -> np.ndarray:
-    cv.putText(img, txt, (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+def render_text(img: np.ndarray, txt: str, pos) -> np.ndarray:
+    cv.putText(img, txt, pos, cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     return img
 
 

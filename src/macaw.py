@@ -94,7 +94,7 @@ def macaw():
 
                 frame = rendering.render_contours(frame_umat, np.int32(bbox))
                 frame = rendering.render_fill_contours(frame, np.int32(bbox))
-                # TODO: Render meta data
+                frame = rendering.render_metadata(frame, 'mask_Hauptgebaeude_no_tree')  # label
 
         # show the frame and update the FPS counter
         rendering.render_text(frame, "FPS: {:.2f}".format(1.0 / (time.time() - time_start)), (10, frame_size[0] - 10))
