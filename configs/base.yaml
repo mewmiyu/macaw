@@ -3,7 +3,7 @@ TRAINING:
   META_ARCHITECTURE: "fasterrcnn_resnet50_fpn"
   # One of "FasterRCNN_ResNet50_FPN_Weights", "FasterRCNN_MobileNet_V3_Large_FPN_Weights"
   WEIGHTS: "FasterRCNN_ResNet50_FPN_Weights"
-  NUM_CLASSES: 13
+  NUM_CLASSES: 16
   TEST_PROPORTION: 0.2
   PARAMETERS:
     BASE_LR: 0.001
@@ -14,12 +14,12 @@ TRAINING:
     STEPS: 20 #  StepLR only accepts a single number
     GAMMA: 0.1
     NUM_WORKERS: 4
-  DEVICE: "cuda"
+  DEVICE: "cpu"
 EVALUATION:
   CHECKPOINT: "faster_rcnn-working-epoch.pt"
   BATCH_SIZE: 1
   NUM_WORKERS: 2
-  DEVICE: "cuda"
+  DEVICE: "cpu"
 DATA:
   PATH: "data"
   ANNOTATIONS: "annotations_full.json"
