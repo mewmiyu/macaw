@@ -2,7 +2,7 @@ import os
 from typing import Any
 
 from PIL import Image
-from src.utils.preprocess import get_transform
+from utils.preprocess import get_transform
 
 
 class ImageProvider:

@@ -1,6 +1,6 @@
 import cv2 as cv
 import numpy as np
-import utils
+import utils_macaw as utils
 
 from PIL import Image
 from PIL import ImageColor
@@ -12,9 +12,11 @@ def render_contours(img: np.ndarray, contours, color=(0, 255, 0)) -> np.ndarray:
     return cv.drawContours(img, [contours], 0, color, 2)
 
 
-def render_fill_contours(img: np.ndarray, contours, color=(0, 255, 0), alpha=0.5) -> np.ndarray:
+def render_fill_contours(
+    img: np.ndarray, contours, color=(0, 255, 0), alpha=0.5
+) -> np.ndarray:
     layer = cv.fillPoly(img.get(), [contours], color=color)
-    return cv.addWeighted(img, alpha, layer, 1-alpha, 0)
+    return cv.addWeighted(img, alpha, layer, 1 - alpha, 0)
 
 
 def render_matches(img, kp, img2, kp2, matches):
@@ -28,13 +30,50 @@ def render_metadata(img: np.ndarray, label: str, pos=(0, 0)) -> np.ndarray:
     # todo change colors and add a box
     pos = (0, 0)
     size = utils.METADATA[label].box_size
-    contour = [[pos[0], pos[1]], [pos[0]+ size[0], pos[1]], [pos[0]+size[0], pos[1]+size[1]], [pos[0], pos[1]+size[1]]]
+    contour = [
+        [pos[0], pos[1]],
+        [pos[0] + size[0], pos[1]],
+        [pos[0] + size[0], pos[1] + size[1]],
+        [pos[0], pos[1] + size[1]],
+    ]
     # render_contours(img, contour, color=(0, 255, 0))
 
-    cv.putText(img, utils.METADATA[label].name, (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-    cv.putText(img, utils.METADATA[label].id, (10, 50), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-    cv.putText(img, utils.METADATA[label].address, (10, 70), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-    cv.putText(img, utils.METADATA[label].info, (10, 90), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    cv.putText(
+        img,
+        utils.METADATA[label].name,
+        (10, 30),
+        cv.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (0, 255, 0),
+        2,
+    )
+    cv.putText(
+        img,
+        utils.METADATA[label].id,
+        (10, 50),
+        cv.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (0, 255, 0),
+        2,
+    )
+    cv.putText(
+        img,
+        utils.METADATA[label].address,
+        (10, 70),
+        cv.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (0, 255, 0),
+        2,
+    )
+    cv.putText(
+        img,
+        utils.METADATA[label].info,
+        (10, 90),
+        cv.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (0, 255, 0),
+        2,
+    )
     return img
 
 
@@ -44,6 +83,7 @@ def render_text(img: np.ndarray, txt: str, pos) -> np.ndarray:
 
 
 # from detector
+
 
 def draw_bounding_box_on_image(
     image, ymin, xmin, ymax, xmax, color, font, thickness=4, display_str_list=()
