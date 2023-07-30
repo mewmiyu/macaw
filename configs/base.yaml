@@ -5,7 +5,7 @@ VIDEO:
   FEATURE_TYPE: "SIFT"
   MODEL_CHECKPOINT: "faster_rcnn-working-epoch.pt"
   ANNOTATIONS_PATH: "annotations_full.json"
-  DEVICE: "mps"
+  DEVICE: "cpu"
 TRAINING:
   # One of "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_fpn"
   META_ARCHITECTURE: "fasterrcnn_resnet50_fpn"
