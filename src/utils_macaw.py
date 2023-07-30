@@ -55,10 +55,11 @@ def load_img(filename: str, size: tuple = None) -> tuple[np.ndarray, np.ndarray]
     gray = np.float32(cv.cvtColor(img, cv.COLOR_BGR2GRAY))
     return img, gray
 
-"""
-     min_y: int, min_x: int, max_y: int, max_x: int
-"""
+
 def crop_img(img: np.ndarray, min_y: int, min_x: int, max_y: int, max_x: int) -> np.ndarray:
+    """
+         min_y: int, min_x: int, max_y: int, max_x: int
+    """
     return img[min_x:max_x, min_y:max_y, :]
 
 

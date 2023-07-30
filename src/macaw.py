@@ -127,7 +127,8 @@ def macaw(
 
         # Add Meta data:
         if len(contours) > 0:
-            frame_umat = rendering.render_metadata(frame_umat, "mask_Hauptgebaeude_no_tree", overlays["hauptgebaeude_overlay"])  # label
+            label = "mask_Hauptgebaeude_no_tree"  # TODO: remove when labels are fixed
+            frame_umat = rendering.render_metadata(frame_umat, label, overlays[label])  # label
 
         # show the frame and update the FPS counter
         rendering.render_text(frame_umat, "FPS: {:.2f}".format(1.0 / (time.time() - time_start)), (10, frame_size[0] - 10),

@@ -22,20 +22,35 @@ def render_matches(img, kp, img2, kp2, matches):
 
 
 # function for either rendering the box with metadata or getting the result from ogre
-def render_metadata(img: cv.UMat, label: str, overlay, pos=(0, 0), color=DEFAULT_COLOR) -> np.ndarray:
-    # TODO: Catch position outside img
-    overlay_color = overlay[:, :, :3]  # np.argwhere(overlay[:, :, 3] != 0)
+def render_metadata(img: cv.UMat, label: str, overlay, pos=np.array((580, 40)), color=DEFAULT_COLOR) -> np.ndarray:
+    overlay_color = overlay[:, :, :3]
     overlay_alpha = overlay[:, :, 3] / 255
     alpha_mask = np.dstack((overlay_alpha, overlay_alpha, overlay_alpha))
     h, w = overlay.shape[:2]
     frame = img.get()
+
+    # mask_offset = np.array((0, 0))
+
+    # # Catch rendering outside the screen
+    # if h + pos[0] > frame.shape[0]:
+    #     h = frame.shape[0] - pos[0]
+    # if w + pos[1] > frame.shape[1]:
+    #     w = frame.shape[1] - pos[1]
+    # if pos[0] < 0:
+    #     h += pos[0]
+    #     mask_offset[0] = -pos[0]
+    #     pos[0] = 0
+    # if pos[1] < 0:
+    #     w += pos[1]
+    #     mask_offset[1] = - pos[1]
+    #     pos[1] = 0
+
     frame_subsection = frame[pos[0]:pos[0] + h, pos[1]:pos[1] + w]
-    combine_fr_ov = frame_subsection * (1-alpha_mask) + overlay_color * alpha_mask
+    # alpha_mask = alpha_mask[mask_offset[0]:h+mask_offset[0], mask_offset[1]:w+mask_offset[1]]
+    # overlay_color = overlay_color[mask_offset[0]:h + mask_offset[0], mask_offset[1]:w + mask_offset[1]]
+
+    combine_fr_ov = frame_subsection * (1 - alpha_mask) + overlay_color * alpha_mask
     frame[pos[0]:pos[0] + h, pos[1]:pos[1] + w] = combine_fr_ov
-    # frame[np.argwhere(overlay[:, :, 3] != 0)[:,0],np.argwhere(overlay[:, :, 3] != 0)[:,1] ,:]
-    #tmp = img.get()
-    #tmp[overlay_color + np.array(pos)] = overlay[overlay_color, :2]
-    #image = cv.addWeighted(img, alpha, tmp, 1-alpha, 0)
 
     return cv.UMat(frame)
 
