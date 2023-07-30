@@ -44,7 +44,7 @@ def load_descriptor_from_file(file):
 
 
 def load_img(filename: str, size: tuple = None) -> tuple[np.ndarray, np.ndarray]:
-    img = cv.imread(filename)
+    img = cv.imread(filename, cv.IMREAD_UNCHANGED)
     if size:
         img = resize(img, size[1])
         # scale_percent = int(100 * size[0] / img.shape[0])

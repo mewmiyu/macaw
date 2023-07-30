@@ -19,9 +19,10 @@ def macaw():
     input = '../imgs/VID_20230612_172955.mp4'  # 0  #
 
     use_feature = 'SIFT'
+    frame_width = 450
 
     masks = utils.load_masks(path_masks)
-    overlays = utils.load_overlays(path_overlays)
+    overlays = utils.load_overlays(path_overlays, int(0.75 * frame_width))
 
     if type(input) is int:
         fvs = utils.webcam_handler()  #
@@ -47,7 +48,7 @@ def macaw():
     matching_rate = 10
     # loop over frames from the video file stream
     while True:  # fvs.more():
-        count +=1
+        count += 1
         bbox = None
         crop_offset = np.array([[[0, 0]]])
 
@@ -60,7 +61,7 @@ def macaw():
         if frame is None:
             break
 
-        frame = utils.resize(frame, width=450)
+        frame = utils.resize(frame, width=frame_width)
         frame_size = frame.shape
         frame_umat = cv.UMat(frame)
         frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
@@ -98,7 +99,7 @@ def macaw():
             bbox += crop_offset  # bbox is calculated of the croped image -> global coordinates by adding the offset
             frame = rendering.render_contours(frame_umat, np.int32(bbox))
             frame = rendering.render_fill_contours(frame, np.int32(bbox))
-            frame = rendering.render_metadata(frame, 'mask_Hauptgebaeude_no_tree')  # label
+            frame = rendering.render_metadata(frame, 'mask_Hauptgebaeude_no_tree', overlays['hauptgebaeude_overlay'])  # label
 
         # show the frame and update the FPS counter
         rendering.render_text(frame, "FPS: {:.2f}".format(1.0 / (time.time() - time_start)), (10, frame_size[0] - 10))
