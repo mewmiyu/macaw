@@ -1,6 +1,6 @@
 import cv2 as cv
 import numpy as np
-import utils
+import utils_macaw as utils
 
 from PIL import Image
 from PIL import ImageColor

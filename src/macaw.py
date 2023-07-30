@@ -87,11 +87,23 @@ def macaw(
 
         # TODO: Filter + Crop boxes
         # box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int).flatten()
+        contours = []
         if (
             not valid
             and hit
             and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
         ):  # hit and non-zero patch
+            # Add the predicted bounding box from the model to the list for rendering
+            contours.append(
+                np.array(
+                    [
+                        [[box_pixel[0], box_pixel[1]]],
+                        [[box_pixel[2], box_pixel[1]]],
+                        [[box_pixel[2], box_pixel[3]]],
+                        [[box_pixel[0], box_pixel[3]]],
+                    ]
+                )
+            )
             # Crop the img
             crop_offset = np.array([[[box_pixel[0], box_pixel[1]]]])
             cropped = utils.crop_img(frame, *box_pixel)  # Test cropping and apply
@@ -111,11 +123,14 @@ def macaw(
 
         if bbox is not None:
             bbox += crop_offset  # bbox is calculated of the croped image -> global coordinates by adding the offset
-            frame = rendering.render_contours(frame_umat, np.int32(bbox))
-            frame = rendering.render_fill_contours(frame, np.int32(bbox))
+            contours.append(np.int32(bbox))
+            frame = rendering.render_fill_contours(frame_umat, np.int32(bbox))
             frame = rendering.render_metadata(
                 frame, "mask_Hauptgebaeude_no_tree"
             )  # label
+
+        if len(contours) > 0:
+            frame = rendering.render_contours(frame, contours)
 
         # show the frame and update the FPS counter
         rendering.render_text(
