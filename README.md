@@ -11,7 +11,9 @@ In order to run our script you need to install the following packages:
 
 > conda install numpy
 
-> conda install matplotlib pillow argparse opencv pycocotools imutils wandb -c conda-forge
+> conda install gst-plugins-base gst-plugins-good gstreamer
+
+> conda install matplotlib opencv pycocotools imutils wandb -c conda-forge
 
 > conda install pytorch torchvision pytorch-cuda=11.8 -c pytorch -c nvidia
 
