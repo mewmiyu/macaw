@@ -13,7 +13,7 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 from datasets.campus_dataset import CampusDataset
 from vision.references.detection.engine import train_one_epoch, evaluate
-from utils.preprocess import get_transform
+from src.utils.preprocess import get_transform
 import vision.references.detection.utils as utils
 
 

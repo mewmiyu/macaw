@@ -7,7 +7,7 @@ import numpy as np
 
 from typing import Tuple
 from methods.viewing import ImageViewer
-from utils.image_loader import DatasetImageProvider
+from src.utils.image_loader import DatasetImageProvider
 
 
 class Labeler(ImageViewer):

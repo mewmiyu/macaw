@@ -7,8 +7,8 @@ from typing import Any, Tuple
 
 import vision.references.detection.utils as utils
 from datasets.campus_dataset import CampusDataset
-from utils.image_loader import ImageProvider
-from utils.preprocess import get_transform
+from src.utils.image_loader import ImageProvider
+from src.utils.preprocess import get_transform
 
 
 class TorchImageProvider(ImageProvider):

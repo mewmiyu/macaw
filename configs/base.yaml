@@ -26,7 +26,7 @@ DATA:
   SUPERCATEGORIES: ["hauptgebäude", "karo5", "piloty", "ULB"]
   SUBCATEGORIES: ["right", "back", "left", "front"]
 METHOD:
-  NAME: "view" # one of execute, train, view, label
+  NAME: "execute" # one of execute, train, view, label
   MODE: "annotate" # if NAME=="label", either "annotate" or "review"
 WANDB:
   ENTITY: "macaw"

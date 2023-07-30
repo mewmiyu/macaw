@@ -2,7 +2,7 @@ import architectures.siamese_network as siamese_network
 import torch
 import numpy as np
 
-from utils.image_loader import DatasetImageProvider
+from src.utils.image_loader import DatasetImageProvider
 
 
 def train(cnfg):
