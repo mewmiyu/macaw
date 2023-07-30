@@ -110,7 +110,7 @@ def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts):
         dst = cv.perspectiveTransform(mask.box_points, np.linalg.pinv(m))
         return dst
     # With slightly fewer hits: Fit bounding box
-    if len(matches_accepted) > MATCHING_THRESHOLD:
+    if len(matches_accepted) > int( 0.75 * MATCHING_THRESHOLD):
         return bounding_box(mask_pts)
     # Else: No matches
     return None

@@ -7,16 +7,14 @@ from PIL import ImageColor
 from PIL import ImageDraw
 from PIL import ImageFont
 
+DEFAULT_COLOR = (0, 255, 0)
+def render_contours(img: np.ndarray, contours, color=DEFAULT_COLOR) -> np.ndarray:
+    return cv.drawContours(img, [contours], 0, color, 2)
 
-def render_contours(img: np.ndarray, contours, color=(0, 255, 0)) -> np.ndarray:
-    return cv.drawContours(img, contours, -1, color, 2)
 
-
-def render_fill_contours(
-    img: np.ndarray, contours, color=(0, 255, 0), alpha=0.5
-) -> np.ndarray:
+def render_fill_contours(img: np.ndarray, contours, color=DEFAULT_COLOR, alpha=0.5) -> np.ndarray:
     layer = cv.fillPoly(img.get(), [contours], color=color)
-    return cv.addWeighted(img, alpha, layer, 1 - alpha, 0)
+    return cv.addWeighted(img, alpha, layer, 1-alpha, 0)
 
 
 def render_matches(img, kp, img2, kp2, matches):
@@ -24,66 +22,30 @@ def render_matches(img, kp, img2, kp2, matches):
 
 
 # function for either rendering the box with metadata or getting the result from ogre
-def render_metadata(img: np.ndarray, label: str, pos=(0, 0)) -> np.ndarray:
-    # DATA = namedtuple("DATA", ["name", "id", "address", "info", "box_size"])
-    # https://machinelearningknowledge.ai/put-text-on-image-in-opencv-python-using-cv2-puttext-with-examples/?utm_content=cmp-true
-    # todo change colors and add a box
-    pos = (0, 0)
-    size = utils.METADATA[label].box_size
-    contour = [
-        [pos[0], pos[1]],
-        [pos[0] + size[0], pos[1]],
-        [pos[0] + size[0], pos[1] + size[1]],
-        [pos[0], pos[1] + size[1]],
-    ]
-    # render_contours(img, contour, color=(0, 255, 0))
+def render_metadata(img: np.ndarray, label: str, overlay, pos=(0, 0), color=DEFAULT_COLOR) -> np.ndarray:
+    # TODO: Catch position outside img
+    overlay_color = overlay[:, :, :3]  # np.argwhere(overlay[:, :, 3] != 0)
+    overlay_alpha = overlay[:, :, 3] / 255
+    alpha_mask = np.dstack((overlay_alpha, overlay_alpha, overlay_alpha))
+    h, w = overlay.shape[:2]
+    frame = img.get()
+    frame_subsection = frame[pos[0]:pos[0] + h, pos[1]:pos[1] + w]
+    combine_fr_ov = frame_subsection * (1-alpha_mask) + overlay_color * alpha_mask
+    frame[pos[0]:pos[0] + h, pos[1]:pos[1] + w] = combine_fr_ov
+    # frame[np.argwhere(overlay[:, :, 3] != 0)[:,0],np.argwhere(overlay[:, :, 3] != 0)[:,1] ,:]
+    #tmp = img.get()
+    #tmp[overlay_color + np.array(pos)] = overlay[overlay_color, :2]
+    #image = cv.addWeighted(img, alpha, tmp, 1-alpha, 0)
 
-    cv.putText(
-        img,
-        utils.METADATA[label].name,
-        (10, 30),
-        cv.FONT_HERSHEY_SIMPLEX,
-        0.6,
-        (0, 255, 0),
-        2,
-    )
-    cv.putText(
-        img,
-        utils.METADATA[label].id,
-        (10, 50),
-        cv.FONT_HERSHEY_SIMPLEX,
-        0.6,
-        (0, 255, 0),
-        2,
-    )
-    cv.putText(
-        img,
-        utils.METADATA[label].address,
-        (10, 70),
-        cv.FONT_HERSHEY_SIMPLEX,
-        0.6,
-        (0, 255, 0),
-        2,
-    )
-    cv.putText(
-        img,
-        utils.METADATA[label].info,
-        (10, 90),
-        cv.FONT_HERSHEY_SIMPLEX,
-        0.6,
-        (0, 255, 0),
-        2,
-    )
-    return img
+    return frame
 
 
-def render_text(img: np.ndarray, txt: str, pos) -> np.ndarray:
-    cv.putText(img, txt, pos, cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+def render_text(img: np.ndarray, txt: str, pos, color=DEFAULT_COLOR) -> np.ndarray:
+    cv.putText(img, txt, pos, cv.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
     return img
 
 
 # from detector
-
 
 def draw_bounding_box_on_image(
     image, ymin, xmin, ymax, xmax, color, font, thickness=4, display_str_list=()
@@ -170,3 +132,4 @@ def draw_boxes(image, boxes, class_names, scores, max_boxes=10, min_score=0.1):
 
 def display_image(image):
     cv.imshow("image", image)
+
