@@ -9,7 +9,7 @@ from PIL import ImageFont
 
 
 def render_contours(img: np.ndarray, contours, color=(0, 255, 0)) -> np.ndarray:
-    return cv.drawContours(img, [contours], 0, color, 2)
+    return cv.drawContours(img, contours, -1, color, 2)
 
 
 def render_fill_contours(
