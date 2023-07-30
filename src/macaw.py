@@ -25,8 +25,9 @@ def macaw(
     annotations_path,
     device,
 ):
+    frame_width = 450
     masks = utils.load_masks(path_masks)
-    overlays = utils.load_overlays(path_overlays)
+    overlays = utils.load_overlays(path_overlays, int(0.75 * frame_width))
 
     if type(input_file) is int:
         fvs = utils.webcam_handler()  #
@@ -66,13 +67,14 @@ def macaw(
         if frame is None:
             break
 
-        frame = utils.resize(frame, width=450)
+        frame = utils.resize(frame, width=frame_width)
         frame_size = frame.shape
         frame_umat = cv.UMat(frame)
         frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         frame_gray = cv.UMat(cv.GaussianBlur(frame_gray, (5, 5), 0))
 
         valid = False
+
         # tracking:
         if count % matching_rate != 0 and pts_f is not None and len(pts_f) > 0:
             pts_f, pts_m, valid = features.track(
@@ -85,25 +87,17 @@ def macaw(
         # Boxes are in the format XYXY
         hit, box_pixel, label, score = model_predictor(frame, silent=False)
 
-        # TODO: Filter + Crop boxes
-        # box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int).flatten()
         contours = []
-        if (
-            not valid
-            and hit
-            and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
-        ):  # hit and non-zero patch
+        if not valid and hit and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0:
+            # hit and non-zero patch
             # Add the predicted bounding box from the model to the list for rendering
-            contours.append(
-                np.array(
-                    [
-                        [[box_pixel[0], box_pixel[1]]],
+            contours.append((
+                np.array([[[box_pixel[0], box_pixel[1]]],
                         [[box_pixel[2], box_pixel[1]]],
                         [[box_pixel[2], box_pixel[3]]],
-                        [[box_pixel[0], box_pixel[3]]],
-                    ]
-                )
-            )
+                        [[box_pixel[0], box_pixel[3]]],])
+            , (255, 0, 0)))
+
             # Crop the img
             crop_offset = np.array([[[box_pixel[0], box_pixel[1]]]])
             cropped = utils.crop_img(frame, *box_pixel)  # Test cropping and apply
@@ -123,24 +117,24 @@ def macaw(
 
         if bbox is not None:
             bbox += crop_offset  # bbox is calculated of the croped image -> global coordinates by adding the offset
-            contours.append(np.int32(bbox))
-            frame = rendering.render_fill_contours(frame_umat, np.int32(bbox))
-            frame = rendering.render_metadata(
-                frame, "mask_Hauptgebaeude_no_tree"
-            )  # label
+            contours.append((np.int32(bbox), (0, 255, 0)))
+            # frame = rendering.render_fill_contours(frame_umat, np.int32(bbox))
 
+        # Render all contours
+        for c in contours:
+            frame_umat = rendering.render_contours(frame_umat, c[0], color=c[1])
+            frame_umat = rendering.render_fill_contours(frame_umat, c[0], color=c[1])
+
+        # Add Meta data:
         if len(contours) > 0:
-            frame = rendering.render_contours(frame, contours)
+            frame_umat = rendering.render_metadata(frame_umat, "mask_Hauptgebaeude_no_tree", overlays["hauptgebaeude_overlay"])  # label
 
         # show the frame and update the FPS counter
-        rendering.render_text(
-            frame,
-            "FPS: {:.2f}".format(1.0 / (time.time() - time_start)),
-            (10, frame_size[0] - 10),
-        )
+        rendering.render_text(frame_umat, "FPS: {:.2f}".format(1.0 / (time.time() - time_start)), (10, frame_size[0] - 10),
+                              )
 
         # display the size of the queue on the frame
-        cv.imshow("frame", frame)
+        cv.imshow("frame", frame_umat)
         cv.waitKey(1)
 
     # do a bit of cleanup

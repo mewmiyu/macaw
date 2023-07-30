@@ -22,7 +22,7 @@ def render_matches(img, kp, img2, kp2, matches):
 
 
 # function for either rendering the box with metadata or getting the result from ogre
-def render_metadata(img: np.ndarray, label: str, overlay, pos=(0, 0), color=DEFAULT_COLOR) -> np.ndarray:
+def render_metadata(img: cv.UMat, label: str, overlay, pos=(0, 0), color=DEFAULT_COLOR) -> np.ndarray:
     # TODO: Catch position outside img
     overlay_color = overlay[:, :, :3]  # np.argwhere(overlay[:, :, 3] != 0)
     overlay_alpha = overlay[:, :, 3] / 255
@@ -37,7 +37,7 @@ def render_metadata(img: np.ndarray, label: str, overlay, pos=(0, 0), color=DEFA
     #tmp[overlay_color + np.array(pos)] = overlay[overlay_color, :2]
     #image = cv.addWeighted(img, alpha, tmp, 1-alpha, 0)
 
-    return frame
+    return cv.UMat(frame)
 
 
 def render_text(img: np.ndarray, txt: str, pos, color=DEFAULT_COLOR) -> np.ndarray:
