@@ -22,12 +22,12 @@ TRAINING:
     STEPS: 20 #  StepLR only accepts a single number
     GAMMA: 0.1
     NUM_WORKERS: 4
-  DEVICE: "cpu"
+  DEVICE: "cuda"
 EVALUATION:
   MODEL_CHECKPOINT: "faster_rcnn-working-epoch.pt"
   BATCH_SIZE: 1
   NUM_WORKERS: 2
-  DEVICE: "cpu"
+  DEVICE: "cuda"
 DATA:
   PATH: "data"
   ANNOTATIONS_PATH: "annotations_full.json"
