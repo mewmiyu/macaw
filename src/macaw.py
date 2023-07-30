@@ -17,13 +17,13 @@ from methods.eval import TorchImageProvider, PredictionsProvider
 
 
 def macaw(
-    input_file,
-    path_masks,
-    path_overlays,
-    feature_type,
-    model_checkpoint,
-    annotations_path,
-    device,
+        input_file,
+        path_masks,
+        path_overlays,
+        feature_type,
+        model_checkpoint,
+        annotations_path,
+        device,
 ):
     frame_width = 450
     masks = utils.load_masks(path_masks)
@@ -50,7 +50,7 @@ def macaw(
 
     count = -1
 
-    matching_rate = 10
+    matching_rate = 15
     # loop over frames from the video file stream
     model_predictor = PredictionsProvider(model_checkpoint, annotations_path, device)
     while True:  # fvs.more():
@@ -84,39 +84,41 @@ def macaw(
 
         last_frame_gray = frame_gray
 
-        # Boxes are in the format XYXY
-        hit, box_pixel, label, score = model_predictor(frame, silent=False)
-
         contours = []
-        if not valid and hit and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0:
-            # hit and non-zero patch
-            # Add the predicted bounding box from the model to the list for rendering
-            contours.append((
-                np.array([[[box_pixel[0], box_pixel[1]]],
-                        [[box_pixel[2], box_pixel[1]]],
-                        [[box_pixel[2], box_pixel[3]]],
-                        [[box_pixel[0], box_pixel[3]]],])
-            , (255, 0, 0)))
+        # Boxes are in the format XYXY
+        if not valid:
+            # todo: voting for labels of multiple previous frames
+            hit, box_pixel, label, score = model_predictor(frame, silent=False)
 
-            # Crop the img
-            crop_offset = np.array([[[box_pixel[0], box_pixel[1]]]])
-            cropped = utils.crop_img(frame, *box_pixel)  # Test cropping and apply
-            frame_gray = cv.UMat(
-                cv.GaussianBlur(cv.cvtColor(cropped, cv.COLOR_BGR2GRAY), (5, 5), 0)
-            )
+            if hit and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0:
+                # hit and non-zero patch
+                # Add the predicted bounding box from the model to the list for rendering
+                contours.append((
+                    np.array([[[box_pixel[0], box_pixel[1]]],
+                              [[box_pixel[2], box_pixel[1]]],
+                              [[box_pixel[2], box_pixel[3]]],
+                              [[box_pixel[0], box_pixel[3]]], ])
+                    , (255, 0, 0)))
 
-            # match the features of the cropped img
-            kp, des = compute_feature(frame_gray)
-            matches, mask_id = features.match(des, masks)
-            pts_f, pts_m = features.get_points_from_matched_keypoints(
-                matches, kp, masks[mask_id].kp
-            )
+                # Crop the img
+                crop_offset = np.array([[[box_pixel[0], box_pixel[1]]]])
+                cropped = utils.crop_img(frame, *box_pixel)  # Test cropping and apply
+                frame_gray = cv.UMat(
+                    cv.GaussianBlur(cv.cvtColor(cropped, cv.COLOR_BGR2GRAY), (5, 5), 0)
+                )
 
-            # gt the bounding box (None, with/without homography -> depends on number of hits)
-            bbox = features.calc_bounding_box(matches, masks[mask_id], pts_f, pts_m)
+                # match the features of the cropped img
+                kp, des = compute_feature(frame_gray)
+                matches, mask_id = features.match(des, masks)
+                pts_f, pts_m = features.get_points_from_matched_keypoints(
+                    matches, kp, masks[mask_id].kp
+                )
+
+                # gt the bounding box (None, with/without homography -> depends on number of hits)
+                bbox = features.calc_bounding_box(matches, masks[mask_id], pts_f, pts_m)
 
         if bbox is not None:
-            bbox += crop_offset  # bbox is calculated of the croped image -> global coordinates by adding the offset
+            bbox += crop_offset  # bbox is calculated of the cropped image -> global coordinates by adding the offset
             contours.append((np.int32(bbox), (0, 255, 0)))
             # frame = rendering.render_fill_contours(frame_umat, np.int32(bbox))
 
@@ -131,8 +133,8 @@ def macaw(
             frame_umat = rendering.render_metadata(frame_umat, label, overlays[label])  # label
 
         # show the frame and update the FPS counter
-        rendering.render_text(frame_umat, "FPS: {:.2f}".format(1.0 / (time.time() - time_start)), (10, frame_size[0] - 10),
-                              )
+        rendering.render_text(frame_umat, "FPS: {:.2f}".format(1.0 / (time.time() - time_start)),
+                              (10, frame_size[0] - 10),)
 
         # display the size of the queue on the frame
         cv.imshow("frame", frame_umat)

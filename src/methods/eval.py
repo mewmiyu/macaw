@@ -16,7 +16,7 @@ class TorchImageProvider(ImageProvider):
         self,
         annotations,
         model_checkpoint=None,
-        device="cpu",
+        device="cuda",
         batch_size=1,
         num_workers=2,
     ) -> None:
