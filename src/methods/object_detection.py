@@ -88,7 +88,7 @@ def train(cfg):
     # move model to the right device
     model.to(device)
 
-    annotation_file = cfg["DATA"]["ANNOTATIONS"]
+    annotation_file = cfg["DATA"]["ANNOTATIONS_PATH"]
     # use our dataset and defined transformations
     dataset = CampusDataset(annotation_file, get_transform(train=True))
     dataset_test = CampusDataset(annotation_file, get_transform(train=False))
@@ -171,7 +171,7 @@ def train(cfg):
         # update the learning rate
         lr_scheduler.step()
         # evaluate on the test dataset
-        if (epoch + 1) % 10 == 0:
+        if (epoch) % 10 == 0 or epoch == num_epochs - 1:
             evaluate(model, data_loader_test, device=device)
 
     utils.save_on_master(model, "faster_rcnn-working-epoch.pt")

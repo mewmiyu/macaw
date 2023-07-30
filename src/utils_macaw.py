@@ -24,11 +24,6 @@ METADATA = {}
 
 
 def vid_handler(file):
-    # ap = argparse.ArgumentParser()
-    # ap.add_argument("-v", "--video", default=file,
-    #                 help="path to input video file")
-    # args = vars(ap.parse_args())
-
     return FileVideoStream(file, queue_size=128).start()
 
 

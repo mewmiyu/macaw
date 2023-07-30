@@ -1,3 +1,11 @@
+VIDEO:
+  FILE_NAME: "imgs/VID_20230612_172955.mp4" # either path to a video, or 0 for webcam
+  MASKS_PATH: "masks/"
+  OVERLAYS_PATH: "masks/overlay/"
+  FEATURE_TYPE: "SIFT"
+  MODEL_CHECKPOINT: "faster_rcnn-working-epoch.pt"
+  ANNOTATIONS_PATH: "annotations_full.json"
+  DEVICE: "mps"
 TRAINING:
   # One of "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_fpn"
   META_ARCHITECTURE: "fasterrcnn_resnet50_fpn"
@@ -16,13 +24,13 @@ TRAINING:
     NUM_WORKERS: 4
   DEVICE: "cpu"
 EVALUATION:
-  CHECKPOINT: "faster_rcnn-working-epoch.pt"
+  MODEL_CHECKPOINT: "faster_rcnn-working-epoch.pt"
   BATCH_SIZE: 1
   NUM_WORKERS: 2
   DEVICE: "cpu"
 DATA:
   PATH: "data"
-  ANNOTATIONS: "annotations_full.json"
+  ANNOTATIONS_PATH: "annotations_full.json"
   SUPERCATEGORIES: ["hauptgebäude", "karo5", "piloty", "ULB"]
   SUBCATEGORIES: ["right", "back", "left", "front"]
 METHOD:

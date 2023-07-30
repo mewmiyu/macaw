@@ -88,12 +88,20 @@ class PredictionsProvider(ImageProvider):
         predictions = self.model(self.images)
         inference_time = time.time() - start_time
 
-        if not silent:
-            print("[INFO] Inference time", inference_time)
+        if len(predictions[0]["boxes"]) > 0:
+            bbox_best = np.array(
+                predictions[0]["boxes"][0].detach().to("cpu"), dtype=np.int32
+            )
+            label_best = self.category_labels[predictions[0]["labels"][0].item()]
+            score_best = predictions[0]["scores"][0].item()
+            res = (True, bbox_best, label_best, score_best)
 
-        return (
-            np.array(self.images[0].detach().to("cpu").permute((1, 2, 0))),
-            None,
-            predictions[0],
-            None,
-        )
+            log_msg = f"[INFO] Inference time: {inference_time} | {label_best} | Confidence: {score_best} | Box: {bbox_best}"
+        else:
+            res = (False, [0, 0, 0, 0], None, None)
+            log_msg = f"[INFO] Inference time: {inference_time}"
+
+        if not silent:
+            print(log_msg)
+
+        return res

@@ -16,23 +16,24 @@ from methods.viewing import ImageViewer
 from methods.eval import TorchImageProvider, PredictionsProvider
 
 
-def macaw():
-    # Config:  # TODO: Outsource to base.yaml
-    path_masks = "masks/"
-    path_overlays = "masks/overlay/"
-    input = "imgs/VID_20230612_172955.mp4"  # 0  #
-
-    use_feature = "SIFT"
-
+def macaw(
+    input_file,
+    path_masks,
+    path_overlays,
+    feature_type,
+    model_checkpoint,
+    annotations_path,
+    device,
+):
     masks = utils.load_masks(path_masks)
     overlays = utils.load_overlays(path_overlays)
 
-    if type(input) is int:
+    if type(input_file) is int:
         fvs = utils.webcam_handler()  #
     else:
-        fvs = utils.vid_handler(input)
+        fvs = utils.vid_handler(input_file)
 
-        match use_feature:
+        match feature_type:
             case "ORB":
                 compute_feature = features.compute_features_orb
             case "SIFT":
@@ -50,9 +51,7 @@ def macaw():
 
     matching_rate = 10
     # loop over frames from the video file stream
-    model_predictor = PredictionsProvider(
-        "faster_rcnn-working-epoch.pt", "annotations_full.json"
-    )
+    model_predictor = PredictionsProvider(model_checkpoint, annotations_path, device)
     while True:  # fvs.more():
         count += 1
         bbox = None
@@ -83,27 +82,19 @@ def macaw():
 
         last_frame_gray = frame_gray
 
-        # boxes, labels, scores = detector.run_detector(frame)  # , showHits=True
-        # hit, label, box = detector.filter_hits(boxes, labels, scores)
-        _, _, prediction, _ = model_predictor(frame, silent=False)
-        if len(prediction["boxes"]) > 0:
-            box = np.array(prediction["boxes"][0].detach().to("cpu"))
-            label = model_predictor.category_labels[prediction["labels"][0].item()]
-            pass
+        # Boxes are in the format XYXY
+        hit, box_pixel, label, score = model_predictor(frame, silent=False)
 
         # TODO: Filter + Crop boxes
-        # TODO: Check order of the new box! (xy min max)
-        box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int).flatten()
+        # box_pixel = np.array(box * np.asarray(frame.shape[:2]), dtype=int).flatten()
         if (
             not valid
             and hit
             and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
         ):  # hit and non-zero patch
             # Crop the img
-            crop_offset = np.array([[[box_pixel[1], box_pixel[0]]]])
-            cropped = utils.crop_img(
-                frame, *box_pixel.flatten()
-            )  # Test cropping and apply
+            crop_offset = np.array([[[box_pixel[0], box_pixel[1]]]])
+            cropped = utils.crop_img(frame, *box_pixel)  # Test cropping and apply
             frame_gray = cv.UMat(
                 cv.GaussianBlur(cv.cvtColor(cropped, cv.COLOR_BGR2GRAY), (5, 5), 0)
             )
@@ -146,7 +137,7 @@ def macaw():
 if __name__ == "__main__":
     # macaw()
 
-    parser = argparse.ArgumentParser("simple_example")
+    parser = argparse.ArgumentParser("macaw")
     parser.add_argument("--config", help="The config file.")
     args = parser.parse_args()
     if "config" not in args:
@@ -155,13 +146,22 @@ if __name__ == "__main__":
     cfg = utils.read_yaml(args.config)
     match cfg["METHOD"]["NAME"]:
         case "execute":
-            macaw()
+            execute_cfg = dict(
+                input_file=cfg["VIDEO"]["FILE_NAME"],
+                path_masks=cfg["VIDEO"]["MASKS_PATH"],
+                path_overlays=cfg["VIDEO"]["OVERLAYS_PATH"],
+                feature_type=cfg["VIDEO"]["FEATURE_TYPE"],
+                model_checkpoint=cfg["VIDEO"]["MODEL_CHECKPOINT"],
+                annotations_path=cfg["VIDEO"]["ANNOTATIONS_PATH"],
+                device=cfg["VIDEO"]["DEVICE"],
+            )
+            macaw(**execute_cfg)
         case "train":
             object_detection.train(cfg)
         case "view":
             eval_cfg = dict(
                 annotations="annotations_full.json",
-                model_checkpoint=cfg["EVALUATION"]["CHECKPOINT"],
+                model_checkpoint=cfg["EVALUATION"]["MODEL_CHECKPOINT"],
                 device=cfg["EVALUATION"]["DEVICE"],
                 batch_size=cfg["EVALUATION"]["BATCH_SIZE"],
                 num_workers=cfg["EVALUATION"]["NUM_WORKERS"],
