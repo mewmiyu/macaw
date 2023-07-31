@@ -2,23 +2,23 @@
   "categories": [
     {
       "id": 0,
-      "name": "hauptgeb\u00e4ude_right",
-      "supercategory": "hauptgeb\u00e4ude"
+      "name": "hauptgebaeude_right",
+      "supercategory": "hauptgebaeude"
     },
     {
       "id": 1,
-      "name": "hauptgeb\u00e4ude_back",
-      "supercategory": "hauptgeb\u00e4ude"
+      "name": "hauptgebaeude_back",
+      "supercategory": "hauptgebaeude"
     },
     {
       "id": 2,
-      "name": "hauptgeb\u00e4ude_left",
-      "supercategory": "hauptgeb\u00e4ude"
+      "name": "hauptgebaeude_left",
+      "supercategory": "hauptgebaeude"
     },
     {
       "id": 3,
-      "name": "hauptgeb\u00e4ude_front",
-      "supercategory": "hauptgeb\u00e4ude"
+      "name": "hauptgebaeude_front",
+      "supercategory": "hauptgebaeude"
     },
     { "id": 4, "name": "karo5_right", "supercategory": "karo5" },
     { "id": 5, "name": "karo5_back", "supercategory": "karo5" },
