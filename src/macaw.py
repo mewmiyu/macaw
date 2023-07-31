@@ -8,6 +8,9 @@ import utils_macaw as utils
 import features
 import rendering
 
+from huggingface_hub import hf_hub_download
+import shutil
+
 import numpy as np
 import cv2 as cv
 import time
@@ -156,6 +159,8 @@ if __name__ == "__main__":
         print("Failed to load config file.")
         exit(-1)
     cfg = utils.read_yaml(args.config)
+    path_to_model = hf_hub_download(repo_id="Hoebelt/macaw", filename="faster_rcnn-30-epoch-working.pt")
+    shutil.move(path_to_model, os.getcwd())
     match cfg["METHOD"]["NAME"]:
         case "execute":
             execute_cfg = dict(
