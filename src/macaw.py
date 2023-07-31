@@ -9,6 +9,7 @@ import features
 import rendering
 
 from huggingface_hub import hf_hub_download
+import os
 import shutil
 
 import numpy as np
