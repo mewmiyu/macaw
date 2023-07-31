@@ -31,7 +31,7 @@ EVALUATION:
 DATA:
   PATH: "data"
   ANNOTATIONS_PATH: "annotations_full.json"
-  SUPERCATEGORIES: ["hauptgebäude", "karo5", "piloty", "ULB"]
+  SUPERCATEGORIES: ["hauptgebaeude", "karo5", "piloty", "ULB"]
   SUBCATEGORIES: ["right", "back", "left", "front"]
 METHOD:
   NAME: "execute" # one of execute, train, view, label
