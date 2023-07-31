@@ -99,7 +99,7 @@ def train(cfg):
     dataset_size = len(dataset)
     indices = torch.randperm(dataset_size).tolist()
     train_set_size = int(dataset_size * (1 - test_proportion))
-    train_set_size += train_set_size % 2
+    train_set_size += train_set_size % batch_size
     test_set_size = dataset_size - train_set_size
     dataset = torch.utils.data.Subset(dataset, indices[:-test_set_size])
     dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_set_size:])
