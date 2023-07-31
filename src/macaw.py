@@ -160,8 +160,9 @@ if __name__ == "__main__":
         print("Failed to load config file.")
         exit(-1)
     cfg = utils.read_yaml(args.config)
-    path_to_model = hf_hub_download(repo_id="Hoebelt/macaw", filename="faster_rcnn-30-epoch-working.pt")
-    shutil.move(path_to_model, os.getcwd())
+    if not os.path.isfile("faster_rcnn-working-epoch.pt"):
+        path_to_model = hf_hub_download(repo_id="Hoebelt/macaw", filename="faster_rcnn-working-epoch.pt")
+        shutil.move(path_to_model, os.getcwd())
     match cfg["METHOD"]["NAME"]:
         case "execute":
             execute_cfg = dict(
