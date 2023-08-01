@@ -7,11 +7,25 @@ import numpy as np
 
 from typing import Tuple
 from methods.viewing import ImageViewer
+from numpy.typing import NDArray
 from utils.image_loader import DatasetImageProvider
 
 
 class Labeler(ImageViewer):
-    def __init__(self, annotations_path):
+    """This class allows to label images with a bounding box"""
+
+    def __init__(self, annotations_path: str):
+        """Initialises the Labeler class. The file in which the annotations are saved is
+        given as an argument. All existing annotations are loaded, so the user can start
+        with non-labeled images or review all labeled ones.
+
+        Args:
+            annotations_path (str): The path to the annotation file.
+
+        Raises:
+            ValueError: This error is raised if the format of the annotations file is
+                wrong.
+        """
         super().__init__(annotations_path)
 
         self.image = np.zeros((300, 300), dtype=np.float32)
@@ -36,7 +50,24 @@ class Labeler(ImageViewer):
         self.coords_x = []
         self.coords_y = []
 
-    def __call__(self, data_path: str, folders: str, subfolders: str, mode: str):
+    def __call__(
+        self, data_path: str, folders: list[str], subfolders: list[str], mode: str
+    ):
+        """This function actually lets the user label the data. The path to the data is
+        provided as an argument, as well as the classes und subclasses. Each image is
+        then displayed in a matplotlib image on which the use can interact with. He can
+        add points to the image, which correspond to the mask of the object. When
+        pressing b, the points are converted into a bounding box. If the user presses n,
+        the bounding box will be saved to the annotations and the next image will be
+        displayed. When mode is set to review, the user can look at all the already
+        labeled images. When pressing q, the application will quit.
+
+        Args:
+            data_path (str): The path to the dataset
+            folders (list[str]): This list describes the main categories of the dataset
+            subfolders (list[str]): This list describes the subcategories of the dataset
+            mode (str): Either "annotate" or "review"
+        """
         loader = DatasetImageProvider(folders, subfolders)
         images, labels, filenames, self.labeled_images["categories"] = loader(data_path)
         for i, image in enumerate(images):
@@ -134,7 +165,22 @@ class Labeler(ImageViewer):
             plt.title(self.title)
             plt.draw()
 
-    def annotation_exists(self, image_name, category_id):
+    def annotation_exists(
+        self, image_name: str, category_id: int
+    ) -> Tuple[bool, dict, int]:
+        """This function checks if for a given image an annotation already exists. It
+        also checks, if the annotation has the correct category. It returns a boolean,
+        describing if the annotation exists, the image, if the image exists and the
+        annotation, if it exists
+
+        Args:
+            image_name (str): The name of the image to check for
+            category_id (int): The category the image should have
+
+        Returns:
+            Tuple[bool, dict, int]: A tuple, containing a boolean, whether the
+            annotation exists, the image and the annotation itself
+        """
         # Check if an image with the same file_name exists in images
         for image in self.labeled_images["images"]:
             if image["file_name"] == image_name:
@@ -150,7 +196,14 @@ class Labeler(ImageViewer):
 
         return False, None, None  # Annotation does not exist
 
-    def save_annotations(self, quit_on_success=False):
+    def save_annotations(self, quit_on_success: bool = False):
+        """This function saves all current annotations. If 'quit_on_success' is true,
+        the application will be exited after the save
+
+        Args:
+            quit_on_success (bool, optional): Whether to close the application after
+                saving. Defaults to False.
+        """
         try:
             with open(self.annotations_path, "w", encoding="utf-8") as f:
                 json.dump(self.labeled_images, f)

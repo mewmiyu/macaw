@@ -4,7 +4,17 @@ torchvision.disable_beta_transforms_warning()
 import torchvision.transforms.v2 as T
 
 
-def get_transform(train: bool):
+def get_transform(train: bool) -> T.Compose:
+    """This function returns the transformations for the datasets. This includes a
+    conversion to a Tensor, as well as a resize. If train is set to true,
+    data-augmentation can be applied, which is disabled for now.
+
+    Args:
+        train (bool): Adds data augmentation to the transformation
+
+    Returns:
+        Transform: The combined transformation to be used on the dataset
+    """
     transforms = []
 
     # converts the image, a PIL image, into a PyTorch Tensor

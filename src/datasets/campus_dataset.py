@@ -2,16 +2,36 @@ import json
 import os
 import torch.utils.data
 import torchvision
+from numpy.typing import ArrayLike
 from PIL import Image
 from torchvision import datapoints
 from torchvision.ops.boxes import box_convert
+from typing import Dict, Tuple
+
+from torchvision.transforms.v2 import functional as F
 
 torchvision.disable_beta_transforms_warning()
-from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2 import Compose
 
 
 class CampusDataset(torch.utils.data.Dataset):
-    def __init__(self, root="", transforms=None):
+    """The CampusDataset inherits from torch.utils.data.Dataset and includes applying
+    transformations to the loaded images. It also uses annotations in the COCO-format
+    """
+
+    def __init__(self, root: str = "", transforms: Compose = None):
+        """Initialises the CampusDataset, which loads images from the root directory,
+        using COCO-formatted annotations and applies transformations onto the images.
+
+        Args:
+            root (str, optional): Path to the dataset. Defaults to "".
+            transforms (Compose, optional): Transformations to be applied on the images.
+                Defaults to None.
+
+        Raises:
+            ValueError: Annotation file needs to be a json file with three keys:
+                categories, images, annotations.
+        """
         self.root = root
         self.transforms = transforms
         with open(root, mode="r") as f:
@@ -24,7 +44,18 @@ class CampusDataset(torch.utils.data.Dataset):
         self.categories = {c["id"]: {**c, "id": c["id"] + 1} for c in self.categories}
         self.imgs = {i["id"]: i for i in self.imgs}
 
-    def __getitem__(self, index):
+    def __getitem__(
+        self, index: int
+    ) -> Tuple[Dict[str, str | ArrayLike], Dict[str, torch.Tensor]]:
+        """Returns the item in the dataset at a certain index
+
+        Args:
+            index (int): Index of the item in the dataset
+
+        Returns:
+            Tuple[Dict[str, str | ArrayLike], Dict[str, torch.Tensor]]: The image and
+                its annotation in COCO format
+        """
         id, img_id, ct_id, bbox, area, seg, iscrowd = self.annotations[index].values()
 
         category = self.categories[ct_id]
@@ -57,4 +88,9 @@ class CampusDataset(torch.utils.data.Dataset):
         return {"image": img, "filename": self.imgs[img_id]["file_name"]}, target
 
     def __len__(self):
+        """Implements the __len__ method from the parent class
+
+        Returns:
+            int: Number of instances in the dataset
+        """
         return len(self.imgs)

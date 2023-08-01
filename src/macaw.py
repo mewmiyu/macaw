@@ -2,7 +2,6 @@ import argparse
 import sys
 
 import methods.object_detection as object_detection
-import methods.train as train
 import methods.labeling as labeling
 import utils_macaw as utils
 import features
@@ -19,13 +18,13 @@ from utils.weights_loader import WeightsLoader
 
 
 def macaw(
-        input_file,
-        path_masks,
-        path_overlays,
-        feature_type,
-        model_checkpoint,
-        annotations_path,
-        device,
+    input_file,
+    path_masks,
+    path_overlays,
+    feature_type,
+    model_checkpoint,
+    annotations_path,
+    device,
 ):
     frame_width = 450
     masks = utils.load_masks(path_masks)
@@ -54,7 +53,9 @@ def macaw(
 
     matching_rate = 15
     # loop over frames from the video file stream
-    model_predictor = PredictionsProvider(model_checkpoint, annotations_path, device)
+    model_predictor = PredictionsProvider(
+        annotations=annotations_path, model_checkpoint=model_checkpoint, device=device
+    )
     while True:  # fvs.more():
         count += 1
         bbox = None
@@ -92,15 +93,25 @@ def macaw(
             # todo: voting for labels of multiple previous frames
             hit, box_pixel, label, score = model_predictor(frame, silent=False)
 
-            if hit and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0:
+            if (
+                hit
+                and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
+            ):
                 # hit and non-zero patch
                 # Add the predicted bounding box from the model to the list for rendering
-                contours.append((
-                    np.array([[[box_pixel[0], box_pixel[1]]],
-                              [[box_pixel[2], box_pixel[1]]],
-                              [[box_pixel[2], box_pixel[3]]],
-                              [[box_pixel[0], box_pixel[3]]], ])
-                    , (255, 0, 0)))
+                contours.append(
+                    (
+                        np.array(
+                            [
+                                [[box_pixel[0], box_pixel[1]]],
+                                [[box_pixel[2], box_pixel[1]]],
+                                [[box_pixel[2], box_pixel[3]]],
+                                [[box_pixel[0], box_pixel[3]]],
+                            ]
+                        ),
+                        (255, 0, 0),
+                    )
+                )
 
                 # Crop the img
                 crop_offset = np.array([[[box_pixel[0], box_pixel[1]]]])
@@ -132,11 +143,16 @@ def macaw(
         # Add Meta data:
         if len(contours) > 0:
             label = "mask_Hauptgebaeude_no_tree"  # TODO: remove when labels are fixed
-            frame_umat = rendering.render_metadata(frame_umat, label, overlays[label])  # label
+            frame_umat = rendering.render_metadata(
+                frame_umat, label, overlays[label]
+            )  # label
 
         # show the frame and update the FPS counter
-        rendering.render_text(frame_umat, "FPS: {:.2f}".format(1.0 / (time.time() - time_start)),
-                              (10, frame_size[0] - 10),)
+        rendering.render_text(
+            frame_umat,
+            "FPS: {:.2f}".format(1.0 / (time.time() - time_start)),
+            (10, frame_size[0] - 10),
+        )
 
         # display the size of the queue on the frame
         cv.imshow("frame", frame_umat)
@@ -149,7 +165,6 @@ def macaw(
 
 
 if __name__ == "__main__":
-    # macaw()
     parser = argparse.ArgumentParser("macaw")
     parser.add_argument("--config", help="The config file.")
     args = parser.parse_args()
@@ -199,6 +214,7 @@ if __name__ == "__main__":
             )
         case _:
             print(
-                f"Unknown method: {cfg['METHOD']['NAME']}. Please use one of the following: train, visualise, execute, label"
+                f"Unknown method: {cfg['METHOD']['NAME']}. Please use one of the"
+                + "following: train, visualise, execute, label"
             )
             exit(-1)

@@ -1,0 +1,11 @@
+VIDEO:
+  FILE_NAME: "imgs/VID_20230612_172955.mp4" # either path to a video, or 0 for webcam
+  MASKS_PATH: "masks/"
+  OVERLAYS_PATH: "masks/overlay/"
+  FEATURE_TYPE: "SIFT"
+  MODEL_CHECKPOINT: "mobile-netv2.pt"
+  DOWNLOAD: True
+  ANNOTATIONS_PATH: "annotations.json"
+  DEVICE: "cuda"
+METHOD:
+  NAME: "execute" # one of execute, train, view, label

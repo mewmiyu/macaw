@@ -1,12 +1,3 @@
-VIDEO:
-  FILE_NAME: "imgs/VID_20230612_172955.mp4" # either path to a video, or 0 for webcam
-  MASKS_PATH: "masks/"
-  OVERLAYS_PATH: "masks/overlay/"
-  FEATURE_TYPE: "SIFT"
-  MODEL_CHECKPOINT: "mobile-netv2.pt"
-  DOWNLOAD: True  # Set to False, in case you want to use an offline model
-  ANNOTATIONS_PATH: "annotations.json"
-  DEVICE: "cuda"
 TRAINING:
   # One of "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_fpn"
   META_ARCHITECTURE: "fasterrcnn_mobilenet_v3_large_fpn"
@@ -21,15 +12,9 @@ TRAINING:
     WEIGHT_DECAY: 0.0001
     BATCH_SIZE: 4
     EPOCHS: 40
-    STEPS: 20  # StepLR only accepts a single number
+    STEPS: 20 #  StepLR only accepts a single number
     GAMMA: 0.1
     NUM_WORKERS: 4
-  DEVICE: "cuda"
-EVALUATION:
-  MODEL_CHECKPOINT: "mobile-netv2.pt"
-  DOWNLOAD: True  # Set to False, in case you want to use an offline model
-  BATCH_SIZE: 1
-  NUM_WORKERS: 2
   DEVICE: "cuda"
 DATA:
   PATH: "data"
@@ -37,8 +22,7 @@ DATA:
   SUPERCATEGORIES: ["hauptgebaeude", "karo5", "piloty", "ULB"]
   SUBCATEGORIES: ["right", "back", "left", "front"]
 METHOD:
-  NAME: "execute"  # one of execute, train, view, label
-  MODE: "annotate"  # if NAME=="label", either "annotate" or "review"
+  NAME: "train" # one of execute, train, view, label
 WANDB:
   ENTITY: "macaw"
   PROJECT: "augmented-vision"

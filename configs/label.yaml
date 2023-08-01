@@ -1,0 +1,8 @@
+DATA:
+  PATH: "data"
+  ANNOTATIONS_PATH: "annotations.json"
+  SUPERCATEGORIES: ["hauptgebaeude", "karo5", "piloty", "ULB"]
+  SUBCATEGORIES: ["right", "back", "left", "front"]
+METHOD:
+  NAME: "label" # one of execute, train, view, label
+  MODE: "annotate" # either "annotate" or "review"
