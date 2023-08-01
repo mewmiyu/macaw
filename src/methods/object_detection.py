@@ -19,49 +19,30 @@ import vision.references.detection.utils as utils
 
 def get_object_detection_model(train_cfg):
     # load an object detection model pre-trained on COCO
-    weights = eval(train_cfg["WEIGHTS"]).DEFAULT
-    model = eval(train_cfg["META_ARCHITECTURE"])(weights)
-    # get the number of input features for the classifier
+    # weights = eval(train_cfg["WEIGHTS"]).DEFAULT
+
+    model = eval(train_cfg["META_ARCHITECTURE"])(pretrained=True)
+    # get the number of input features for the classifier²
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     # replace the pre-trained head with a new one
     model.roi_heads.box_predictor = FastRCNNPredictor(
         in_features, train_cfg["NUM_CLASSES"]
     )
 
-    return model, weights
+    return model
 
 
-def train_experiment_fn(cfg):
-    model = get_object_detection_model({})
-    dataset = CampusDataset("annotations_full.json", get_transform(train=True))
-    batch_size = 2
-    data_loader = torch.utils.data.DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=4,
-        collate_fn=utils.collate_fn,
-    )
-    # For Training
-    images, targets = next(iter(data_loader))
-    images = list(image["image"].to("cuda") for image in images)
-    targets = [{k: v for k, v in t.items()} for t in targets]
-    # targets = [
-    #     {key: value[i] for key, value in targets.items()} for i in range(batch_size)
-    # ]
+def train(cfg: dict):
+    """This method is used for training the detector of macaw. The config file describes the
+    parameters of the training, like the device, the batch-size, number of classes, architecture
+    etc. After the training is done, the trained model will be saved to disk.
 
-    model.to("cuda")
-    output = model(images, targets)  # Returns losses and detections
-    # For inference
-    model.eval()
-    x = [torch.rand(3, 300, 400, device="cuda"), torch.rand(3, 500, 400, device="cuda")]
-    start_time = time.time()
-    predictions = model(x)  # Returns predictions
-    inference_time = time.time() - start_time
-    print("Inference time", inference_time)
+    Args:
+        cfg (dict): The config file, to describe the training-process
 
-
-def train(cfg):
+    Raises:
+        ValueError: The error is thrown if the given device is no supported
+    """
     train_cfg = cfg["TRAINING"]
     device = train_cfg["DEVICE"]
     if (
@@ -83,7 +64,7 @@ def train(cfg):
 
     meta_architecture = train_cfg["META_ARCHITECTURE"]
     # get the model using our helper function
-    model, weights = get_object_detection_model(train_cfg)
+    model = get_object_detection_model(train_cfg)
 
     # move model to the right device
     model.to(device)
@@ -173,9 +154,9 @@ def train(cfg):
         # evaluate on the test dataset
         if (epoch) % 10 == 0 or epoch == num_epochs - 1:
             evaluate(model, data_loader_test, device=device)
-
-    utils.save_on_master(model, "faster_rcnn-working-epoch.pt")
-    model_saved = torch.load("faster_rcnn-working-epoch.pt")
+    model_file = cfg['TRAINING']['MODEL_FILE']
+    utils.save_on_master(model, model_file)
+    model_saved = torch.load(model_file)
 
 
 if __name__ == "__main__":
