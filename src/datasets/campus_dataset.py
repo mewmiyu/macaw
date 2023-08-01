@@ -14,7 +14,7 @@ class CampusDataset(torch.utils.data.Dataset):
     def __init__(self, root="", transforms=None):
         self.root = root
         self.transforms = transforms
-        with open("annotations_full.json", mode="r") as f:
+        with open(root, mode="r") as f:
             annotations = json.load(f)
         keys = ["categories", "images", "annotations"]
         if any([key not in annotations for key in keys]):

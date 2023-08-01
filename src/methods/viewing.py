@@ -14,7 +14,7 @@ class ImageViewer:
         self.last_key_press = ""
 
     def __call__(self):
-        image, target, prediction, title = self.image_provider()
+        image, target, prediction, title = self.image_provider(silent=False)
 
         self.show_image(image, target, prediction, title)
         plt.show(block=True)
@@ -26,7 +26,7 @@ class ImageViewer:
             self.last_key_press = event.key
 
         if event.key == "n":
-            image, target, prediction, title = self.image_provider()
+            image, target, prediction, title = self.image_provider(silent=False)
             self.show_image(image, target, prediction, title=title)
 
     def on_click(self, event):
@@ -39,7 +39,7 @@ class ImageViewer:
 
         if target is not None:
             print(f"[INFO] Annotation:")
-            self.draw_bbox(*target[0])
+            self.draw_bbox(*target[0], format="XYXY")
 
         if prediction is None:
             return

@@ -8,12 +8,14 @@ import utils_macaw as utils
 import features
 import rendering
 
+
 import numpy as np
 import cv2 as cv
 import time
 
 from methods.viewing import ImageViewer
 from methods.eval import TorchImageProvider, PredictionsProvider
+from utils.weights_loader import WeightsLoader
 
 
 def macaw(
@@ -148,7 +150,6 @@ def macaw(
 
 if __name__ == "__main__":
     # macaw()
-
     parser = argparse.ArgumentParser("macaw")
     parser.add_argument("--config", help="The config file.")
     args = parser.parse_args()
@@ -158,6 +159,8 @@ if __name__ == "__main__":
     cfg = utils.read_yaml(args.config)
     match cfg["METHOD"]["NAME"]:
         case "execute":
+            weights_loader = WeightsLoader(cfg["VIDEO"]["MODEL_CHECKPOINT"])
+            weights_loader()
             execute_cfg = dict(
                 input_file=cfg["VIDEO"]["FILE_NAME"],
                 path_masks=cfg["VIDEO"]["MASKS_PATH"],
@@ -171,8 +174,10 @@ if __name__ == "__main__":
         case "train":
             object_detection.train(cfg)
         case "view":
+            weights_loader = WeightsLoader(cfg["DATA"]["MODEL_CHECKPOINT"])
+            weights_loader()
             eval_cfg = dict(
-                annotations="annotations_full.json",
+                annotations=cfg["DATA"]["ANNOTATIONS_PATH"],
                 model_checkpoint=cfg["EVALUATION"]["MODEL_CHECKPOINT"],
                 device=cfg["EVALUATION"]["DEVICE"],
                 batch_size=cfg["EVALUATION"]["BATCH_SIZE"],
@@ -182,7 +187,7 @@ if __name__ == "__main__":
             viewer = ImageViewer(image_provider)
             viewer()
         case "label":
-            labeler = labeling.Labeler("annotations_full.json")
+            labeler = labeling.Labeler(cfg["DATA"]["ANNOTATIONS_PATH"])
             # We NEED to load all data, otherwise we won't have correct labels
             labeler(
                 cfg["DATA"]["PATH"],

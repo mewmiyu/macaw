@@ -3,14 +3,15 @@ VIDEO:
   MASKS_PATH: "masks/"
   OVERLAYS_PATH: "masks/overlay/"
   FEATURE_TYPE: "SIFT"
-  MODEL_CHECKPOINT: "faster_rcnn-working-epoch.pt"
-  ANNOTATIONS_PATH: "annotations_full.json"
+  MODEL_CHECKPOINT: "mobile-netv2.pt"
+  ANNOTATIONS_PATH: "annotations.json"
   DEVICE: "cuda"
 TRAINING:
   # One of "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_fpn"
-  META_ARCHITECTURE: "fasterrcnn_resnet50_fpn"
+  META_ARCHITECTURE: "fasterrcnn_mobilenet_v3_large_fpn"
   # One of "FasterRCNN_ResNet50_FPN_Weights", "FasterRCNN_MobileNet_V3_Large_FPN_Weights"
-  WEIGHTS: "FasterRCNN_ResNet50_FPN_Weights"
+  WEIGHTS: "FasterRCNN_MobileNet_V3_Large_FPN_Weights"
+  MODEL_FILE: "mobile-netv2.pt"
   NUM_CLASSES: 17
   TEST_PROPORTION: 0.2
   PARAMETERS:
@@ -18,23 +19,23 @@ TRAINING:
     MOMENTUM: 0.9
     WEIGHT_DECAY: 0.0001
     BATCH_SIZE: 4
-    EPOCHS: 30
+    EPOCHS: 40
     STEPS: 20 #  StepLR only accepts a single number
     GAMMA: 0.1
     NUM_WORKERS: 4
   DEVICE: "cuda"
 EVALUATION:
-  MODEL_CHECKPOINT: "faster_rcnn-working-epoch.pt"
+  MODEL_CHECKPOINT: "mobile-netv2.pt"
   BATCH_SIZE: 1
   NUM_WORKERS: 2
   DEVICE: "cuda"
 DATA:
   PATH: "data"
-  ANNOTATIONS_PATH: "annotations_full.json"
+  ANNOTATIONS_PATH: "annotations.json"
   SUPERCATEGORIES: ["hauptgebaeude", "karo5", "piloty", "ULB"]
   SUBCATEGORIES: ["right", "back", "left", "front"]
 METHOD:
-  NAME: "train" # one of execute, train, view, label
+  NAME: "execute" # one of execute, train, view, label
   MODE: "annotate" # if NAME=="label", either "annotate" or "review"
 WANDB:
   ENTITY: "macaw"
