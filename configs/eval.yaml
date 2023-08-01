@@ -1,0 +1,13 @@
+EVALUATION:
+  MODEL_CHECKPOINT: "mobile-netv2.pt"
+  DOWNLOAD: True  # Set to False, in case you want to use an offline model
+  BATCH_SIZE: 1
+  NUM_WORKERS: 2
+  DEVICE: "cuda"
+DATA:
+  PATH: "data"
+  ANNOTATIONS_PATH: "annotations.json"
+  SUPERCATEGORIES: ["hauptgebaeude", "karo5", "piloty", "ULB"]
+  SUBCATEGORIES: ["right", "back", "left", "front"]
+METHOD:
+  NAME: "view"  # one of execute, train, view, label
