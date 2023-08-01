@@ -159,8 +159,9 @@ if __name__ == "__main__":
     cfg = utils.read_yaml(args.config)
     match cfg["METHOD"]["NAME"]:
         case "execute":
-            weights_loader = WeightsLoader(cfg["VIDEO"]["MODEL_CHECKPOINT"])
-            weights_loader()
+            if cfg["VIDEO"]["DOWNLOAD"]:
+                weights_loader = WeightsLoader(cfg["VIDEO"]["MODEL_CHECKPOINT"])
+                weights_loader()
             execute_cfg = dict(
                 input_file=cfg["VIDEO"]["FILE_NAME"],
                 path_masks=cfg["VIDEO"]["MASKS_PATH"],
@@ -174,8 +175,9 @@ if __name__ == "__main__":
         case "train":
             object_detection.train(cfg)
         case "view":
-            weights_loader = WeightsLoader(cfg["DATA"]["MODEL_CHECKPOINT"])
-            weights_loader()
+            if cfg["EVALUATION"]["DOWNLOAD"]:
+                weights_loader = WeightsLoader(cfg["EVALUATION"]["MODEL_CHECKPOINT"])
+                weights_loader()
             eval_cfg = dict(
                 annotations=cfg["DATA"]["ANNOTATIONS_PATH"],
                 model_checkpoint=cfg["EVALUATION"]["MODEL_CHECKPOINT"],

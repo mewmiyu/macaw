@@ -4,6 +4,7 @@ VIDEO:
   OVERLAYS_PATH: "masks/overlay/"
   FEATURE_TYPE: "SIFT"
   MODEL_CHECKPOINT: "mobile-netv2.pt"
+  DOWNLOAD: True  # Set to False, in case you want to use an offline model
   ANNOTATIONS_PATH: "annotations.json"
   DEVICE: "cuda"
 TRAINING:
@@ -26,6 +27,7 @@ TRAINING:
   DEVICE: "cuda"
 EVALUATION:
   MODEL_CHECKPOINT: "mobile-netv2.pt"
+  DOWNLOAD: True  # Set to False, in case you want to use an offline model
   BATCH_SIZE: 1
   NUM_WORKERS: 2
   DEVICE: "cuda"
