@@ -5,20 +5,47 @@ import time
 import torch
 import torchvision.models.detection.mask_rcnn
 import vision.references.detection.utils as utils
+
+from torch.optim import Optimizer
+from torch.utils.data import DataLoader
+from torch.cuda.amp.grad_scaler import GradScaler
+from torchvision.models.detection.faster_rcnn import FasterRCNN
+from torchvision.models.detection.generalized_rcnn import GeneralizedRCNN
 from vision.references.detection.coco_eval import CocoEvaluator
 from vision.references.detection.coco_utils import get_coco_api_from_dataset
 
 
 def train_one_epoch(
-    model,
-    optimizer,
-    data_loader,
-    device,
-    epoch,
-    print_freq,
-    scaler=None,
-    ignore_wandb=False,
-):
+    model: FasterRCNN,
+    optimizer: Optimizer,
+    data_loader: DataLoader,
+    device: str,
+    epoch: int,
+    print_freq: int,
+    scaler: GradScaler = None,
+    ignore_wandb: bool = False,
+) -> utils.MetricLogger:
+    """This function trains a model for one epoch on a dataset. The training on the
+    model is done by the given optimizer on the specified device. By default weights and
+    biases is used to monitor the progess. If neccessary a scaler for the gradient on
+    the losses can be used.
+
+    Args:
+        model (FasterRCNN): The Faster RCNN model to be trained
+        optimizer (Optimizer): The optimizer to train the model
+        data_loader (DataLoader): The dataloader containing the dataset for training.
+            During an epoch all images of the dataset are used to train the model
+        device (str): The device on which the training is executed, one of "cuda",
+            "cpu" and "mps"
+        epoch (int): The number of the epoch
+        print_freq (int): Describes how often the metrics are printed
+        scaler (GradScaler, optional): A Grad Scaler for the gradient. Defaults to None.
+        ignore_wandb (bool, optional): Whether to ignore weights and biases or to use
+            it. Defaults to False.
+
+    Returns:
+        Utils.MetricLogger: The logged metrics for the training
+    """
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value:.6f}"))
@@ -52,7 +79,7 @@ def train_one_epoch(
                 loss_dict = model(images, targets)
                 losses = sum(loss for loss in loss_dict.values())
         else:
-            # with torch.cuda.amp.autocast(enabled=scaler is not None):
+            # Automatic Mixed Precision is not available on MPS so we just skip it
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
         del targets, images
@@ -69,7 +96,7 @@ def train_one_epoch(
             sys.exit(1)
 
         optimizer.zero_grad()
-        if scaler is not None:
+        if scaler is not None and torch.cuda.is_available():
             scaler.scale(losses).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -88,7 +115,16 @@ def train_one_epoch(
     return metric_logger
 
 
-def _get_iou_types(model):
+def _get_iou_types(model: GeneralizedRCNN) -> list:
+    """This functions returns the types of outputs of the model on which an
+      "intersection over union" (IoU) can be calculated.
+
+    Args:
+        model (GeneralizedRCNN): The model we want to know the iou types.
+
+    Returns:
+        list: The list of iou types as strings
+    """
     model_without_ddp = model
     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
         model_without_ddp = model.module
@@ -101,7 +137,23 @@ def _get_iou_types(model):
 
 
 @torch.inference_mode()
-def evaluate(model, data_loader, device):
+def evaluate(
+    model: GeneralizedRCNN, data_loader: DataLoader, device: str
+) -> CocoEvaluator:
+    """This function evaluates a given model on the CocoEvaluation Metrics. The
+    evaluation is done on the dataset, provided through the given data_loader.
+    After inputting the images through the model, the coco-evaluator actually does
+    the evaluation and prints it to the console.
+
+    Args:
+        model (GeneralizedRCNN): The model to be evaluated
+        data_loader (DataLoader): The dataloader containing the test images
+        device (str): The device on which to run the model, one of "cuda", "cpu" and
+            "mps"
+
+    Returns:
+        CocoEvaluator: The Cocoevaluator, containing all the computed metrics.
+    """
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
@@ -130,7 +182,10 @@ def evaluate(model, data_loader, device):
         outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
         model_time = time.time() - model_time
 
-        res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
+        res = {
+            target["image_id"].item(): output
+            for target, output in zip(targets, outputs)
+        }
         evaluator_time = time.time()
         coco_evaluator.update(res)
         evaluator_time = time.time() - evaluator_time

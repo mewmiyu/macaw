@@ -3,7 +3,9 @@ import torch
 import torch.utils.data
 import wandb
 
+
 from torchvision.models.detection import (
+    FasterRCNN,
     fasterrcnn_resnet50_fpn,
     FasterRCNN_ResNet50_FPN_Weights,
     fasterrcnn_mobilenet_v3_large_fpn,
@@ -17,7 +19,16 @@ from utils.preprocess import get_transform
 import vision.references.detection.utils as utils
 
 
-def get_object_detection_model(train_cfg):
+def get_object_detection_model(train_cfg: dict) -> FasterRCNN:
+    """Loads and returns the faster rcnn model, which is given in the config file. The
+    model is already pretrained.
+
+    Args:
+        train_cfg (dict): the training part of the configuration
+
+    Returns:
+        FasterRCNN: The pretrained detection model
+    """
     # load an object detection model pre-trained on COCO
     # weights = eval(train_cfg["WEIGHTS"]).DEFAULT
 
@@ -33,9 +44,9 @@ def get_object_detection_model(train_cfg):
 
 
 def train(cfg: dict):
-    """This method is used for training the detector of macaw. The config file describes the
-    parameters of the training, like the device, the batch-size, number of classes, architecture
-    etc. After the training is done, the trained model will be saved to disk.
+    """This method is used for fine-tuning the detector. The config file describes the
+    parameters of the training, like the device, the batch-size, number of classes,
+    architecture, etc. After the training is done, the trained model is saved to disk.
 
     Args:
         cfg (dict): The config file, to describe the training-process
@@ -154,7 +165,7 @@ def train(cfg: dict):
         # evaluate on the test dataset
         if (epoch) % 10 == 0 or epoch == num_epochs - 1:
             evaluate(model, data_loader_test, device=device)
-    model_file = cfg['TRAINING']['MODEL_FILE']
+    model_file = cfg["TRAINING"]["MODEL_FILE"]
     utils.save_on_master(model, model_file)
     model_saved = torch.load(model_file)
 

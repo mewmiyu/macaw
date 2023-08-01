@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import torch
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 from torch.utils.data import DataLoader
 from typing import Any, Tuple
 
@@ -12,22 +12,39 @@ from utils.preprocess import get_transform
 
 
 class TorchImageProvider(ImageProvider):
+    """The TorchImageProvider uses a DataLoader to load random images from our dataset
+    and runs inference on them, using the provided model.
+    """
+
     def __init__(
         self,
-        annotations,
-        model_checkpoint=None,
-        device="cuda",
-        batch_size=1,
-        num_workers=2,
+        annotations: str,
+        model_checkpoint: str = None,
+        device: str = "cpu",
+        batch_size: str = 1,
+        num_workers: str = 2,
     ) -> None:
+        """Initialises the TorchImageProvider with the path to the annotations, which
+        are used to create our CampusDataset, from which the random images are drawn
+        using torch.utils.data.DataLoader.
+
+        Args:
+            annotations (str): Path to the annotations file.
+            model_checkpoint (str, optional): Path to the model checkpoint, if none is
+                provided, no predictions are made. Defaults to None.
+            device (str, optional): The device on which to run the model, one of "cuda",
+                "cpu" and "mps". Defaults to "cpu".
+            batch_size (int, optional): Number of images to run inference on. Defaults
+                to 1.
+            num_workers (int, optional): Number of workers to use for loading data.
+                Defaults to 2.
+        """
         super().__init__()
 
         self.device = device
         if model_checkpoint is not None:
             self.model = torch.load(model_checkpoint, map_location=self.device)
             self.model.eval()
-        else:
-            raise ValueError(f"No model checkpoint was provided!")
 
         dataset = CampusDataset(annotations, get_transform(train=False))
         self.category_labels = {
@@ -41,14 +58,27 @@ class TorchImageProvider(ImageProvider):
             collate_fn=utils.collate_fn,
         )
 
-    def __call__(self, silent=True) -> Tuple[Any, ...]:
+    def __call__(self, silent=True) -> Tuple[NDArray, ArrayLike, ArrayLike, str]:
+        """Loads the next image from the DataLoader and runs inference on it, if a model
+        checkpoint was provided.
+
+        Args:
+            silent (bool, optional): Whether or not to print the inference time.
+                Defaults to True.
+
+        Returns:
+            Tuple[Any, ...]: The image, true box, predicted box and image name
+        """
         data, targets = next(iter(self.data_loader))
         images = list(image["image"].to(self.device) for image in data)
         image_names = list(image["filename"] for image in data)
         targets = [{k: v for k, v in t.items()} for t in targets]
 
         start_time = time.time()
-        predictions = self.model(images)
+        if self.model:
+            predictions = self.model(images)
+        else:
+            predictions = [None]
         inference_time = time.time() - start_time
 
         if not silent:
@@ -63,7 +93,25 @@ class TorchImageProvider(ImageProvider):
 
 
 class PredictionsProvider(ImageProvider):
-    def __init__(self, model_checkpoint=None, annotations=None, device="cpu") -> None:
+    """The TorchImageProvider uses a DataLoader to load random images from our dataset
+    and runs inference on them, using the provided model.
+    """
+
+    def __init__(
+        self, annotations: str, model_checkpoint: str, device: str = "cpu"
+    ) -> None:
+        """Initialises the PredictionsProvider with a path to the model checkpoint and
+        another path, to the annotation file.
+
+        Args:
+            annotations (str, optional): Path to the annotations file.
+            model_checkpoint (str): Path to the model checkpoint.
+            device (str, optional): The device on which to run the model, one of "cuda",
+                "cpu" and "mps". Defaults to "cpu".
+
+        Raises:
+            ValueError: _description_
+        """
         super().__init__()
 
         self.device = device
@@ -71,15 +119,31 @@ class PredictionsProvider(ImageProvider):
             self.model = torch.load(model_checkpoint, map_location=self.device)
             self.model.eval()
         else:
-            raise ValueError(f"No model checkpoint was provided!")
+            raise ValueError(f"The path to the model checkpoint was not provided!")
 
         if annotations is not None:
             dataset = CampusDataset(annotations, get_transform(train=False))
             self.category_labels = {
                 cat["id"]: cat["name"] for cat in dataset.categories.values()
             }
+        else:
+            raise ValueError(f"The path to the annotations was not provided!")
 
-    def __call__(self, image: NDArray[np.uint8], silent=True):
+    def __call__(
+        self, image: NDArray[np.uint8], silent: bool = True
+    ) -> Tuple[bool, list, str, float]:
+        """Runs inference on the input image and maps the predicted label to a string
+        from the annotation file.
+
+        Args:
+            image (NDArray[np.uint8]): The input image, with values in range [0; 255]
+            silent (bool, optional): Whether or not to print the inference time.
+                Defaults to True.
+
+        Returns:
+            Tuple[bool, list, str, float]: Boolean showing if there were any predicted
+                boxes, the box, label and score of the best prediction.
+        """
         image_float = image.astype(np.float32) / 255.0
         image_tensor = torch.from_numpy(image_float).to(self.device).permute((2, 0, 1))
         self.images = [image_tensor]

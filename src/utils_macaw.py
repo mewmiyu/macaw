@@ -1,14 +1,9 @@
-import os
-import torchvision.transforms as transforms
 import numpy as np
 import yaml
 import features
 import glob
 from pathlib import Path
 
-from PIL import Image
-
-import argparse
 from imutils.video import FileVideoStream
 from imutils.video import WebcamVideoStream
 
@@ -56,9 +51,11 @@ def load_img(filename: str, size: tuple = None) -> tuple[np.ndarray, np.ndarray]
     return img, gray
 
 
-def crop_img(img: np.ndarray, min_y: int, min_x: int, max_y: int, max_x: int) -> np.ndarray:
+def crop_img(
+    img: np.ndarray, min_y: int, min_x: int, max_y: int, max_x: int
+) -> np.ndarray:
     """
-         min_y: int, min_x: int, max_y: int, max_x: int
+    min_y: int, min_x: int, max_y: int, max_x: int
     """
     return img[min_x:max_x, min_y:max_y, :]
 
@@ -74,21 +71,33 @@ def to_grayscale(img):
 """
     Load all images from 'path', calculate keypoints and feature-descriptors and return them aas list(MASK)
 """
+
+
 def load_masks(path, compute_feature=features.compute_features_sift):
     masks = {}
-    for filename in glob.glob(path + '*.jpg'):
+    for filename in glob.glob(path + "*.jpg"):
         img_mask, gray_mask = load_img(filename)
         kp_mask, des_mask = compute_feature(img_mask)
         h, w = gray_mask.shape
         name = Path(filename).stem
-        masks[name] = Mask(name, kp_mask, des_mask, img_mask.shape[:2],  np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2))
-        METADATA[name] = DATA("Dummy", "-1", "Holzweg 42", "Geht dich gar nichts an!", (200, 90))
+        masks[name] = Mask(
+            name,
+            kp_mask,
+            des_mask,
+            img_mask.shape[:2],
+            np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(
+                -1, 1, 2
+            ),
+        )
+        METADATA[name] = DATA(
+            "Dummy", "-1", "Holzweg 42", "Geht dich gar nichts an!", (200, 90)
+        )
     return masks
 
 
 def load_overlays(path, width=None):
     overlays = {}
-    for filename in glob.glob(path + '*.png'):
+    for filename in glob.glob(path + "*.png"):
         img, _ = load_img(filename)
         if width is not None:
             img = resize(img, width=width)
@@ -96,9 +105,15 @@ def load_overlays(path, width=None):
     return overlays
 
 
-def read_yaml(filepath):
-    """
-    Reads in a yaml config file from a filepath
+def read_yaml(filepath: str) -> dict:
+    """Reads in a yaml file from disk based on the given filepath. This is only used to
+    read in the config file
+
+    Args:
+        filepath (str): filepath to the yaml file
+
+    Returns:
+        dict: content of the yaml file as a dictionary
     """
     with open(filepath, "r") as file:
         data = yaml.safe_load(file)
