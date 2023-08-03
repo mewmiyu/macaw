@@ -15,8 +15,6 @@ from collections import namedtuple
 Mask = namedtuple("Mask", ["name", "kp", "des", "box", "box_points"])
 DATA = namedtuple("DATA", ["name", "id", "address", "info", "box_size"])
 
-METADATA = {}
-
 
 def vid_handler(file):
     return FileVideoStream(file, queue_size=128).start()
@@ -79,19 +77,20 @@ def load_masks(path, compute_feature=features.compute_features_sift):
         img_mask, gray_mask = load_img(filename)
         kp_mask, des_mask = compute_feature(img_mask)
         h, w = gray_mask.shape
-        name = Path(filename).stem
-        masks[name] = Mask(
-            name,
-            kp_mask,
-            des_mask,
-            img_mask.shape[:2],
-            np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(
-                -1, 1, 2
-            ),
-        )
-        METADATA[name] = DATA(
-            "Dummy", "-1", "Holzweg 42", "Geht dich gar nichts an!", (200, 90)
-        )
+        name = Path(filename).stem[:-2]  # every mask is numbered _0-9 -> remove _%d
+        new_mask = Mask(
+                name,
+                kp_mask,
+                des_mask,
+                img_mask.shape[:2],
+                np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(
+                    -1, 1, 2
+                ),
+            )
+        if name in masks:
+            masks[name].append(new_mask)
+        else:
+            masks[name] = [new_mask]
     return masks
 
 

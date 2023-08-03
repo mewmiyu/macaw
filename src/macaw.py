@@ -48,6 +48,7 @@ def macaw(
     pts_m = None
     mask_id = None
     matches = None
+    label = None
 
     count = -1
 
@@ -83,15 +84,14 @@ def macaw(
             pts_f, pts_m, valid = features.track(
                 last_frame_gray, frame_gray, pts_f, pts_m
             )
-            bbox = features.calc_bounding_box(matches, masks[mask_id], pts_f, pts_m)
+            bbox = features.calc_bounding_box(matches, masks[label][mask_id], pts_f, pts_m)
 
         last_frame_gray = frame_gray
 
         contours = []
         # Boxes are in the format XYXY
         if not valid:
-            # todo: voting for labels of multiple previous frames
-            hit, box_pixel, label, score = model_predictor(frame, silent=False)
+            hit, box_pixel, label, score = model_predictor(frame, silent=True)
 
             if (
                 hit
@@ -122,13 +122,13 @@ def macaw(
 
                 # match the features of the cropped img
                 kp, des = compute_feature(frame_gray)
-                matches, mask_id = features.match(des, masks)
+                matches, mask_id = features.match(des, masks[label], label)
                 pts_f, pts_m = features.get_points_from_matched_keypoints(
-                    matches, kp, masks[mask_id].kp
+                    matches, kp, masks[label][mask_id].kp
                 )
 
                 # gt the bounding box (None, with/without homography -> depends on number of hits)
-                bbox = features.calc_bounding_box(matches, masks[mask_id], pts_f, pts_m)
+                bbox = features.calc_bounding_box(matches, masks[label][mask_id], pts_f, pts_m)
 
         if bbox is not None:
             bbox += crop_offset  # bbox is calculated of the cropped image -> global coordinates by adding the offset
@@ -142,7 +142,7 @@ def macaw(
 
         # Add Meta data:
         if len(contours) > 0:
-            label = "mask_Hauptgebaeude_no_tree"  # TODO: remove when labels are fixed
+            # label = "mask_Hauptgebaeude_no_tree"  # TODO: remove when labels are fixed
             frame_umat = rendering.render_metadata(
                 frame_umat, label, overlays[label]
             )  # label
