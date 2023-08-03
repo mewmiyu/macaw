@@ -48,7 +48,8 @@ def macaw(
     # TODO: Dynamic Resize to fit different resolutions
     # TODO: Certainty Threshold detector
     frame_shape = utils.resize(fvs.read(), width=frame_width).shape
-    if list(overlays.values())[0].shape[0] > 0.5 * fvs.read().shape[0]:
+    overlay_shape = list(overlays.values())[0].shape
+    if overlay_shape[0] > 0.5 * fvs.read().shape[0]:
         for i in overlays:
             overlays[i] = utils.resize(overlays[i], height=int(0.5 * fvs.read().shape[0]))
 
@@ -93,6 +94,7 @@ def macaw(
             pts_f, pts_m, valid = features.track(
                 last_frame_gray, frame_gray, pts_f, pts_m
             )
+        if valid:
             bbox = features.calc_bounding_box(matches, masks[label][mask_id], pts_f, pts_m)
 
         last_frame_gray = frame_gray
@@ -100,8 +102,10 @@ def macaw(
         contours = []
         # Boxes are in the format XYXY
         if not valid:
+            l = label
             hit, box_pixel, label, score = model_predictor(frame, silent=False)
-
+            if label is None:
+                label = l
             if (
                     hit
                     and label in masks
@@ -153,7 +157,7 @@ def macaw(
         # Add Meta data:
         if len(contours) > 0:
             frame_umat = rendering.render_metadata(
-                frame_umat, label, overlays[label], pos=(frame_shape[0] - overlays[label].shape[0] - 40, 40)
+                frame_umat, label, overlays, pos=(frame_shape[0] - overlay_shape[0] - 40, 40), alpha=0.8
             )  # label
 
         # show the frame and update the FPS counter

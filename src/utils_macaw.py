@@ -99,7 +99,8 @@ def load_overlays(path, width=None, height=None):
     for filename in glob.glob(path + "*.png"):
         img, _ = load_img(filename)
         img = resize(img, width=width, height=height)
-        overlays[Path(filename).stem] = img
+        name = Path(filename).stem
+        overlays[name] = img
     return overlays
 
 

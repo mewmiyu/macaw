@@ -22,7 +22,11 @@ def render_matches(img, kp, img2, kp2, matches):
 
 
 # function for either rendering the box with metadata or getting the result from ogre
-def render_metadata(img: cv.UMat, label: str, overlay, pos=np.array((40, 40)), alpha=0.75, color=DEFAULT_COLOR):
+def render_metadata(img: cv.UMat, label: str, overlays, pos=np.array((40, 40)), alpha=0.75, color=DEFAULT_COLOR):
+    idx = label.rindex('_')
+    name = label[:idx]
+    overlay = overlays[name]
+
     overlay_color = overlay[:, :, :3]
     overlay_alpha = overlay[:, :, 3] / 255
     alpha_mask = np.dstack((overlay_alpha, overlay_alpha, overlay_alpha))
