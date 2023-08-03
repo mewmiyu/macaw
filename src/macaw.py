@@ -150,14 +150,8 @@ def macaw(
             frame_umat = rendering.render_contours(frame_umat, c[0], color=c[1])
             frame_umat = rendering.render_fill_contours(frame_umat, c[0], color=c[1])
 
-        label = "hauptgebaeude_front"  # TODO: remove when labels are fixed
-        frame_umat = rendering.render_metadata(
-            frame_umat, label, overlays[label], pos=(frame_shape[0] - overlays[label].shape[0] - 40, 40)
-        )  # label
-
         # Add Meta data:
         if len(contours) > 0:
-            # label = "mask_Hauptgebaeude_no_tree"  # TODO: remove when labels are fixed
             frame_umat = rendering.render_metadata(
                 frame_umat, label, overlays[label], pos=(frame_shape[0] - overlays[label].shape[0] - 40, 40)
             )  # label
