@@ -22,7 +22,7 @@ def render_matches(img, kp, img2, kp2, matches):
 
 
 # function for either rendering the box with metadata or getting the result from ogre
-def render_metadata(img: cv.UMat, label: str, overlay, pos=np.array((580, 40)), color=DEFAULT_COLOR) -> np.ndarray:
+def render_metadata(img: cv.UMat, label: str, overlay, pos=np.array((40, 40)), alpha=0.75, color=DEFAULT_COLOR):
     overlay_color = overlay[:, :, :3]
     overlay_alpha = overlay[:, :, 3] / 255
     alpha_mask = np.dstack((overlay_alpha, overlay_alpha, overlay_alpha))
@@ -45,12 +45,10 @@ def render_metadata(img: cv.UMat, label: str, overlay, pos=np.array((580, 40)), 
     #     mask_offset[1] = - pos[1]
     #     pos[1] = 0
 
-    frame_subsection = frame[pos[0]:pos[0] + h, pos[1]:pos[1] + w]
-    # alpha_mask = alpha_mask[mask_offset[0]:h+mask_offset[0], mask_offset[1]:w+mask_offset[1]]
-    # overlay_color = overlay_color[mask_offset[0]:h + mask_offset[0], mask_offset[1]:w + mask_offset[1]]
+    frame_subsection = frame[pos[0]:pos[0] + h, pos[1]:pos[1] + w, :]
 
     combine_fr_ov = frame_subsection * (1 - alpha_mask) + overlay_color * alpha_mask
-    frame[pos[0]:pos[0] + h, pos[1]:pos[1] + w] = combine_fr_ov
+    frame[pos[0]:pos[0] + h, pos[1]:pos[1] + w] = (1 - alpha) * frame_subsection + alpha * combine_fr_ov
 
     return cv.UMat(frame)
 

@@ -26,22 +26,31 @@ def macaw(
     annotations_path,
     device,
 ):
-    frame_width = 450
-    masks = utils.load_masks(path_masks)
-    overlays = utils.load_overlays(path_overlays, int(0.75 * frame_width))
 
     if type(input_file) is int:
-        fvs = utils.webcam_handler()  #
+        fvs = utils.webcam_handler(input_file)  #
+
     else:
         fvs = utils.vid_handler(input_file)
 
-        match feature_type:
-            case "ORB":
-                compute_feature = features.compute_features_orb
-            case "SIFT":
-                compute_feature = features.compute_features_sift
-            case _:
-                compute_feature = features.compute_features_sift
+    match feature_type:
+        case "ORB":
+            compute_feature = features.compute_features_orb
+        case "SIFT":
+            compute_feature = features.compute_features_sift
+        case _:
+            compute_feature = features.compute_features_sift
+
+    frame_width = 450
+
+    masks = utils.load_masks(path_masks)
+    overlays = utils.load_overlays(path_overlays, width=int(0.75 * frame_width))  # width=int(0.75 * frame_width)
+    # TODO: Dynamic Resize to fit different resolutions
+    # TODO: Certainty Threshold detector
+    frame_shape = utils.resize(fvs.read(), width=frame_width).shape
+    if list(overlays.values())[0].shape[0] > 0.5 * fvs.read().shape[0]:
+        for i in overlays:
+            overlays[i] = utils.resize(overlays[i], height=int(0.5 * fvs.read().shape[0]))
 
     last_frame_gray = None  # gray  # cv.UMat((1, 1))
     pts_f = None
@@ -91,11 +100,12 @@ def macaw(
         contours = []
         # Boxes are in the format XYXY
         if not valid:
-            hit, box_pixel, label, score = model_predictor(frame, silent=True)
+            hit, box_pixel, label, score = model_predictor(frame, silent=False)
 
             if (
-                hit
-                and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
+                    hit
+                    and label in masks
+                    and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
             ):
                 # hit and non-zero patch
                 # Add the predicted bounding box from the model to the list for rendering
@@ -140,11 +150,16 @@ def macaw(
             frame_umat = rendering.render_contours(frame_umat, c[0], color=c[1])
             frame_umat = rendering.render_fill_contours(frame_umat, c[0], color=c[1])
 
+        label = "hauptgebaeude_front"  # TODO: remove when labels are fixed
+        frame_umat = rendering.render_metadata(
+            frame_umat, label, overlays[label], pos=(frame_shape[0] - overlays[label].shape[0] - 40, 40)
+        )  # label
+
         # Add Meta data:
         if len(contours) > 0:
             # label = "mask_Hauptgebaeude_no_tree"  # TODO: remove when labels are fixed
             frame_umat = rendering.render_metadata(
-                frame_umat, label, overlays[label]
+                frame_umat, label, overlays[label], pos=(frame_shape[0] - overlays[label].shape[0] - 40, 40)
             )  # label
 
         # show the frame and update the FPS counter

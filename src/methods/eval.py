@@ -152,12 +152,14 @@ class PredictionsProvider(ImageProvider):
         predictions = self.model(self.images)
         inference_time = time.time() - start_time
 
+        score_best = 0.0
         if len(predictions[0]["boxes"]) > 0:
+            score_best = predictions[0]["scores"][0].item()
+        if len(predictions[0]["boxes"]) > 0 and score_best > 0.70:
             bbox_best = np.array(
                 predictions[0]["boxes"][0].detach().to("cpu"), dtype=np.int32
             )
             label_best = self.category_labels[predictions[0]["labels"][0].item()]
-            score_best = predictions[0]["scores"][0].item()
             res = (True, bbox_best, label_best, score_best)
 
             log_msg = f"[INFO] Inference time: {inference_time} | {label_best} | Confidence: {score_best} | Box: {bbox_best}"

@@ -20,8 +20,8 @@ def vid_handler(file):
     return FileVideoStream(file, queue_size=128).start()
 
 
-def webcam_handler():
-    return WebcamVideoStream(src=0).start()
+def webcam_handler(src):
+    return WebcamVideoStream(src=src).start()
 
 
 def save_descriptor_to_file(file, data):
@@ -58,8 +58,8 @@ def crop_img(
     return img[min_x:max_x, min_y:max_y, :]
 
 
-def resize(img, width):
-    return imutils.resize(img, width=width)
+def resize(img, width=None, height=None):
+    return imutils.resize(img, width=width, height=height)
 
 
 def to_grayscale(img):
@@ -81,7 +81,7 @@ def load_masks(path, compute_feature=features.compute_features_sift):
         new_mask = Mask(
                 name,
                 kp_mask,
-                des_mask,
+                cv.UMat(des_mask),
                 img_mask.shape[:2],
                 np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(
                     -1, 1, 2
@@ -94,12 +94,11 @@ def load_masks(path, compute_feature=features.compute_features_sift):
     return masks
 
 
-def load_overlays(path, width=None):
+def load_overlays(path, width=None, height=None):
     overlays = {}
     for filename in glob.glob(path + "*.png"):
         img, _ = load_img(filename)
-        if width is not None:
-            img = resize(img, width=width)
+        img = resize(img, width=width, height=height)
         overlays[Path(filename).stem] = img
     return overlays
 

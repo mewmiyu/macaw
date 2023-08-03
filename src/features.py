@@ -6,7 +6,7 @@ import time
 
 import utils
 
-TRACKING_THRESHOLD = 20
+TRACKING_THRESHOLD = 0.95
 MATCHING_THRESHOLD = 20
 MATCH_DISTANCE = 0.7
 
@@ -42,11 +42,11 @@ def compute_features_orb(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:
     orb = cv.ORB_create()
 
     # find the keypoints with ORB
-    kp = orb.detect(img, None)
+    # kp = orb.detect(img, None)
 
     # compute the descriptors with ORB
-    kp, des = orb.compute(img, kp)
-
+    # kp, des = orb.compute(img, kp)
+    kp, des = orb.detectAndCompute(img, None)
     return kp, des
 
 
@@ -70,6 +70,13 @@ def match_flann(des, des2):
     FLANN_INDEX_KDTREE = 1
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
     search_params = dict(checks=50)
+
+    # search_params = {}
+    # index_params = dict(algorithm = 6,
+    #                table_number = 6,         # was 12
+    #                key_size = 12,            # was 20
+    #                multi_probe_level = 1)    # was 2
+
     flann = cv.FlannBasedMatcher(index_params, search_params)
     matches = flann.knnMatch(des, des2, k=2)
     # store all the good matches as per Lowe's ratio test.
@@ -81,7 +88,7 @@ def match_flann(des, des2):
 
 
 def estimate_homography(pts_src, points_st):
-    m, mask = cv.findHomography(pts_src, points_st, cv.RANSAC, 5.0)  # returns M, mask
+    m, mask = cv.findHomography(pts_src, points_st, cv.RANSAC, 5.0, confidence=0.95)  # returns M, mask
     return m, mask
 
 
@@ -138,7 +145,7 @@ def track(img_old, img_new, pts_old, pts_mask_old):
         #
         # cv.imshow('frame', img)
         # cv.waitKey(1)
-    if len(good_new) >= TRACKING_THRESHOLD:
+    if float(len(good_new))/float(len(pts_old)) >= TRACKING_THRESHOLD:
         valid = True
 
     return good_new, mask_new, valid
