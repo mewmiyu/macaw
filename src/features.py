@@ -75,11 +75,11 @@ def compute_features_orb(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:
     orb = cv.ORB_create()
 
     # find the keypoints with ORB
-    # kp = orb.detect(img, None)
+    kp = orb.detect(img, None)
 
     # compute the descriptors with ORB
-    # kp, des = orb.compute(img, kp)
-    kp, des = orb.detectAndCompute(img, None)
+    kp, des = orb.compute(img, kp)
+    # kp, des = orb.detectAndCompute(img, None)
     return kp, des
 
 
@@ -99,22 +99,38 @@ def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
 
 
 # https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
-def match_flann(des, des2):
+def match_flann_SIFT(des, des2):
     FLANN_INDEX_KDTREE = 1
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
     search_params = dict(checks=50)
 
-    # search_params = {}
-    # index_params = dict(algorithm = 6,
-    #                table_number = 6,         # was 12
-    #                key_size = 12,            # was 20
-    #                multi_probe_level = 1)    # was 2
-
     flann = cv.FlannBasedMatcher(index_params, search_params)
+    matches_accepted = []
+
     matches = flann.knnMatch(des, des2, k=2)
     # store all the good matches as per Lowe's ratio test.
-    matches_accepted = []
     for m, n in matches:
+        if m.distance < MATCH_DISTANCE * n.distance:
+            matches_accepted.append(m)
+    return matches_accepted
+
+
+def match_flann_ORB(des, des2):
+    search_params = {}
+    index_params = dict(algorithm=6,
+                        table_number=6,  # was 12
+                        key_size=12,  # was 20
+                        multi_probe_level=1)  # was 2
+
+    flann = cv.FlannBasedMatcher(index_params, search_params)
+    matches_accepted = []
+
+    matches = flann.knnMatch(des, des2, k=2)
+    # store all the good matches as per Lowe's ratio test.
+    for tmp in matches:
+        if len(tmp) != 2:
+            continue
+        m, n = tmp
         if m.distance < MATCH_DISTANCE * n.distance:
             matches_accepted.append(m)
     return matches_accepted
@@ -125,12 +141,15 @@ def estimate_homography(pts_src, points_st):
     return m, mask
 
 
-def match(des, masks, target, use_feature='SIFT'):
+def match(des, masks, target, use_feature):
     matches_best = None
     matches_best_nr = -1
     mask_id = 0
     for idx, mask in enumerate(masks):
-        matches_accepted = match_flann(des, mask.des)
+        if use_feature == 'SIFT':
+            matches_accepted = match_flann_SIFT(des, mask.des)
+        else:
+            matches_accepted = match_flann_ORB(des, mask.des)
 
         if len(matches_accepted) > matches_best_nr:
             matches_best = matches_accepted

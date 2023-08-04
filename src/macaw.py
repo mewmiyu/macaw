@@ -43,9 +43,9 @@ def macaw(
         case "SIFT":
             compute_feature = features.compute_features_sift
         case _:
-            compute_feature = features.compute_features_sift
+            compute_feature = features.compute_features_sift # TODO: Throw exxception
 
-    masks = utils.load_masks(path_masks)
+    masks = utils.load_masks(path_masks, compute_feature)
     overlays = utils.load_overlays(path_overlays, width=int(0.75 * frame_width))  # width=int(0.75 * frame_width)
     frame_shape = utils.resize(fvs.read(), width=frame_width).shape
     overlay_shape = list(overlays.values())[0].shape
@@ -135,7 +135,7 @@ def macaw(
 
                 # match the features of the cropped img
                 kp, des = compute_feature(frame_gray)
-                matches, mask_id = features.match(des, masks[label], label)
+                matches, mask_id = features.match(des, masks[label], label, feature_type)
                 pts_f, pts_m = features.get_points_from_matched_keypoints(
                     matches, kp, masks[label][mask_id].kp
                 )

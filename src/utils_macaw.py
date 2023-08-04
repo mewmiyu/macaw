@@ -72,7 +72,7 @@ def to_grayscale(img):
 """
 
 
-def load_masks(path, compute_feature=features.compute_features_sift):
+def load_masks(path, compute_feature):
     masks = {}
     for filename in glob.glob(path + "*.jpg"):
         img_mask, gray_mask = load_img(filename)
