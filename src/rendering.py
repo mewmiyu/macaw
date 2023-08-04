@@ -1,11 +1,14 @@
 import cv2 as cv
 import numpy as np
-import utils_macaw as utils
 
 from PIL import Image
 from PIL import ImageColor
 from PIL import ImageDraw
 from PIL import ImageFont
+
+from queue import Queue
+import time
+from threading import Thread
 
 DEFAULT_COLOR = (0, 255, 0)
 def render_contours(img: np.ndarray, contours, color=DEFAULT_COLOR) -> np.ndarray:
@@ -150,3 +153,50 @@ def draw_boxes(image, boxes, class_names, scores, max_boxes=10, min_score=0.1):
 def display_image(image):
     cv.imshow("image", image)
 
+
+class VideoReplayAsync:
+    def __init__(self, target_fps=30, queue_size=20):
+        self.running = False
+        self.Q = Queue(maxsize=queue_size)
+        self.thread = Thread(target=self.update, args=())
+        self.thread.daemon = True
+        self.fps = target_fps
+        self.dt = 1.0 / self.fps
+
+    def start(self):
+        self.running = True
+        self.thread.start()
+        return self
+
+    def update(self):
+        t_old = time.time()
+        # keep looping infinitely
+        while self.running:
+            t = time.time()
+            elapsed = t - t_old
+            t_old = t
+
+            if elapsed < self.dt:
+                time.sleep(self.dt - elapsed)
+
+
+            if self.Q.empty():
+                time.sleep(self.dt)
+                continue
+
+            frame = self.Q.get()
+
+            # display the size of the queue on the frame
+            cv.imshow("MACAW", frame)
+            cv.waitKey(1)
+
+    def add(self, frame):
+        while self.Q.full():
+            time.sleep(self.dt)
+        self.Q.put(frame)
+
+    def stop(self):
+        # indicate that the thread should be stopped
+        self.running = False
+        # wait until stream resources are released (producer thread might be still grabbing frame)
+        self.thread.join()

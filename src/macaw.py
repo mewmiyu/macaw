@@ -33,6 +33,8 @@ def macaw(
     else:
         fvs = utils.vid_handler(input_file)
 
+    vid_out = rendering.VideoReplayAsync(target_fps=30).start()
+
     match feature_type:
         case "ORB":
             compute_feature = features.compute_features_orb
@@ -40,6 +42,8 @@ def macaw(
             compute_feature = features.compute_features_sift
         case _:
             compute_feature = features.compute_features_sift
+
+
 
     frame_width = 450
 
@@ -167,13 +171,17 @@ def macaw(
             (10, frame_size[0] - 10),
         )
 
-        # display the size of the queue on the frame
-        cv.imshow("frame", frame_umat)
-        cv.waitKey(1)
+        # # display the size of the queue on the frame
+        # cv.imshow("frame", frame_umat)
+        # cv.waitKey(1)
+
+        # Add Frame to the render Queue
+        vid_out.add(frame_umat)
 
     # do a bit of cleanup
     cv.destroyAllWindows()
     fvs.stop()
+    vid_out.stop()
     return
 
 
