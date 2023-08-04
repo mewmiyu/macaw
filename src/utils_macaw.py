@@ -16,6 +16,7 @@ Mask = namedtuple("Mask", ["name", "kp", "des", "box", "box_points"])
 DATA = namedtuple("DATA", ["name", "id", "address", "info", "box_size"])
 
 
+
 def vid_handler(file):
     return FileVideoStream(file, queue_size=128).start()
 

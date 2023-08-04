@@ -10,6 +10,39 @@ TRACKING_THRESHOLD = 0.95
 MATCHING_THRESHOLD = 20
 MATCH_DISTANCE = 0.7
 
+TRACKING_THRESHOLDS = {"hauptgebaeude_right": TRACKING_THRESHOLD,
+                       "hauptgebaeude_back": TRACKING_THRESHOLD,
+                       "hauptgebaeude_left": TRACKING_THRESHOLD,
+                       "hauptgebaeude_front": TRACKING_THRESHOLD,
+                       "karo5_right": TRACKING_THRESHOLD,
+                       "karo5_back": TRACKING_THRESHOLD,
+                       "karo5_left": TRACKING_THRESHOLD,
+                       "karo5_front": TRACKING_THRESHOLD,
+                       "piloty_right": TRACKING_THRESHOLD,
+                       "piloty_back": TRACKING_THRESHOLD,
+                       "piloty_left": TRACKING_THRESHOLD,
+                       "piloty_front": TRACKING_THRESHOLD,
+                       "ULB_right": TRACKING_THRESHOLD,
+                       "ULB_back": TRACKING_THRESHOLD,
+                       "ULB_left": TRACKING_THRESHOLD,
+                       "ULB_front": TRACKING_THRESHOLD}
+MATCHING_THRESHOLDS = {"hauptgebaeude_right": MATCHING_THRESHOLD,
+                       "hauptgebaeude_back": MATCHING_THRESHOLD,
+                       "hauptgebaeude_left": MATCHING_THRESHOLD,
+                       "hauptgebaeude_front": MATCHING_THRESHOLD,
+                       "karo5_right": MATCHING_THRESHOLD,
+                       "karo5_back": MATCHING_THRESHOLD,
+                       "karo5_left": MATCHING_THRESHOLD,
+                       "karo5_front": MATCHING_THRESHOLD,
+                       "piloty_right": MATCHING_THRESHOLD,
+                       "piloty_back": MATCHING_THRESHOLD,
+                       "piloty_left": MATCHING_THRESHOLD,
+                       "piloty_front": MATCHING_THRESHOLD,
+                       "ULB_right": MATCHING_THRESHOLD,
+                       "ULB_back": MATCHING_THRESHOLD,
+                       "ULB_left": MATCHING_THRESHOLD,
+                       "ULB_front": MATCHING_THRESHOLD}
+
 
 def compute_features_sift(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:  # -> tuple[cv.KeyPoint]
     # SIFT: https://docs.opencv.org/4.x/da/df5/tutorial_py_sift_intro.html
@@ -107,45 +140,40 @@ def match(des, masks, target, use_feature='SIFT'):
     return matches_best, mask_id  # Support for list of masks -> return best match
 
 
-def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts):
+def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts, label):
+    threshold = MATCHING_THRESHOLD
+
+    if label in MATCHING_THRESHOLDS:
+        threshold = MATCHING_THRESHOLDS[label]
+
     # With enough matches: Estimate Homography
-    if len(matches_accepted) > 2 * MATCHING_THRESHOLD:
+    if len(matches_accepted) > 2 * threshold:
         m, msk = estimate_homography(src_pts, mask_pts)
         dst = cv.perspectiveTransform(mask.box_points, np.linalg.pinv(m))
         return dst
     # With slightly fewer hits: Fit bounding box
-    if len(matches_accepted) > int( 0.75 * MATCHING_THRESHOLD):
+    if len(matches_accepted) > int( 0.75 * threshold):
         return bounding_box(mask_pts)
     # Else: No matches
     return None
 
 
-def track(img_old, img_new, pts_old, pts_mask_old):
+def track(img_old, img_new, pts_old, pts_mask_old, label):
+    threshold = TRACKING_THRESHOLD
+
+    if label in TRACKING_THRESHOLDS:
+        threshold = TRACKING_THRESHOLDS[label]
+
     pts_new, st, err = cv.calcOpticalFlowPyrLK(img_old, img_new, pts_old, None, minEigThreshold=0.1)
     good_new = None
     mask_new = None
-    # good_old = []
-    # img = np.zeros_like(img_old)
+
     valid = False  # Check if enough points are tracked
     if pts_new is not None:
         good_new = pts_new.get()[st.get()[:, 0] == 1]
         mask_new = pts_mask_old[st.get()[:, 0] == 1]
-        # good_old = pts_old[st == 1]
-        #
-        # mask = np.zeros_like(img_old)
-        # color = np.random.randint(0, 255, (100, 3))
 
-        # draw the tracks
-        # for i, (new, old) in enumerate(zip(good_new, good_old)):
-        #     a, b = new.ravel()
-        #     c, d = old.ravel()
-        #     mask = cv.line(mask, (int(a), int(b)), (int(c), int(d)), color[i].tolist(), 2)
-        #     frame = cv.circle(img_old, (int(a), int(b)), 5, color[i].tolist(), -1)
-        #     img = cv.add(frame, mask)
-        #
-        # cv.imshow('frame', img)
-        # cv.waitKey(1)
-    if float(len(good_new))/float(len(pts_old)) >= TRACKING_THRESHOLD:
+    if float(len(good_new))/float(len(pts_old)) >= threshold:
         valid = True
 
     return good_new, mask_new, valid

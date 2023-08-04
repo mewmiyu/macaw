@@ -26,6 +26,8 @@ def macaw(
     annotations_path,
     device,
 ):
+    frame_width = 450
+    matching_rate = 15
 
     if type(input_file) is int:
         fvs = utils.webcam_handler(input_file)  #
@@ -43,14 +45,8 @@ def macaw(
         case _:
             compute_feature = features.compute_features_sift
 
-
-
-    frame_width = 450
-
     masks = utils.load_masks(path_masks)
     overlays = utils.load_overlays(path_overlays, width=int(0.75 * frame_width))  # width=int(0.75 * frame_width)
-    # TODO: Dynamic Resize to fit different resolutions
-    # TODO: Certainty Threshold detector
     frame_shape = utils.resize(fvs.read(), width=frame_width).shape
     overlay_shape = list(overlays.values())[0].shape
     if overlay_shape[0] > 0.5 * fvs.read().shape[0]:
@@ -66,7 +62,6 @@ def macaw(
 
     count = -1
 
-    matching_rate = 15
     # loop over frames from the video file stream
     model_predictor = PredictionsProvider(
         annotations=annotations_path, model_checkpoint=model_checkpoint, device=device
@@ -96,10 +91,10 @@ def macaw(
         # tracking:
         if count % matching_rate != 0 and pts_f is not None and len(pts_f) > 0:
             pts_f, pts_m, valid = features.track(
-                last_frame_gray, frame_gray, pts_f, pts_m
+                last_frame_gray, frame_gray, pts_f, pts_m, label
             )
         if valid:
-            bbox = features.calc_bounding_box(matches, masks[label][mask_id], pts_f, pts_m)
+            bbox = features.calc_bounding_box(matches, masks[label][mask_id], pts_f, pts_m, label)
 
         last_frame_gray = frame_gray
 
@@ -145,8 +140,8 @@ def macaw(
                     matches, kp, masks[label][mask_id].kp
                 )
 
-                # gt the bounding box (None, with/without homography -> depends on number of hits)
-                bbox = features.calc_bounding_box(matches, masks[label][mask_id], pts_f, pts_m)
+                # get the bounding box (None, with/without homography -> depends on number of hits)
+                bbox = features.calc_bounding_box(matches, masks[label][mask_id], pts_f, pts_m, label)
 
         if bbox is not None:
             bbox += crop_offset  # bbox is calculated of the cropped image -> global coordinates by adding the offset
