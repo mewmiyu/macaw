@@ -89,10 +89,13 @@ def macaw(
         valid = False
 
         # tracking:
-        if count % matching_rate != 0 and pts_f is not None and len(pts_f) > 0:
+        if count != matching_rate and pts_f is not None and len(pts_f) > 0:
             pts_f, pts_m, valid = features.track(
                 last_frame_gray, frame_gray, pts_f, pts_m, label
             )
+        else:
+            count = 0
+
         if valid:
             bbox = features.calc_bounding_box(matches, masks[label][mask_id], pts_f, pts_m, label)
 
@@ -100,7 +103,7 @@ def macaw(
 
         contours = []
         # Boxes are in the format XYXY
-        if not valid:
+        if not valid or bbox is None:
             l = label
             hit, box_pixel, label, score = model_predictor(frame, silent=False)
             if label is None:
@@ -176,7 +179,7 @@ def macaw(
     fvs.stop()
     vid_out.stop()
     cv.destroyAllWindows()
-    return
+    sys.exit(0)
 
 
 if __name__ == "__main__":

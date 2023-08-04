@@ -192,7 +192,9 @@ def track(img_old, img_new, pts_old, pts_mask_old, label):
         good_new = pts_new.get()[st.get()[:, 0] == 1]
         mask_new = pts_mask_old[st.get()[:, 0] == 1]
 
-    if float(len(good_new))/float(len(pts_old)) >= threshold:
+    # TODO: Check succesfull tracking condition  again
+    # TODO: Maybe try to track detector results as well!
+    if float(len(good_new))/float(len(pts_old)) >= threshold and len(good_new) > 15:
         valid = True
 
     return good_new, mask_new, valid
