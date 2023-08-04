@@ -171,7 +171,6 @@ def macaw(
             (10, frame_size[0] - 10),
         )
 
-        # # display the size of the queue on the frame
         # cv.imshow("frame", frame_umat)
         # cv.waitKey(1)
 
@@ -179,9 +178,9 @@ def macaw(
         vid_out.add(frame_umat)
 
     # do a bit of cleanup
-    cv.destroyAllWindows()
     fvs.stop()
     vid_out.stop()
+    cv.destroyAllWindows()
     return
 
 

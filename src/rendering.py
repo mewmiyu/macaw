@@ -171,14 +171,13 @@ class VideoReplayAsync:
     def update(self):
         t_old = time.time()
         # keep looping infinitely
-        while self.running:
+        while self.running or not self.Q.empty():
             t = time.time()
             elapsed = t - t_old
             t_old = t
 
             if elapsed < self.dt:
                 time.sleep(self.dt - elapsed)
-
 
             if self.Q.empty():
                 time.sleep(self.dt)
@@ -200,3 +199,4 @@ class VideoReplayAsync:
         self.running = False
         # wait until stream resources are released (producer thread might be still grabbing frame)
         self.thread.join()
+        cv.destroyAllWindows()
