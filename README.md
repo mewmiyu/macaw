@@ -27,7 +27,7 @@ The application is designed to help students and visitors of the TU Darmstadt to
       <a href="#usage">Usage</a>
       <ol>
         <li>
-          <a href="#training">Configuration</a>
+          <a href="#configuration">Configuration</a>
         </li>
         <li>
           <a href="#visualizing">Visualizing</a>
