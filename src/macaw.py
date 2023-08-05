@@ -132,15 +132,20 @@ def macaw(
         # Boxes are in the format XYXY
         if not valid or bbox is None:
             l = label
-            hit, box_pixel, label, score = model_predictor(
+            pred = model_predictor(
                 frame, silent=detector_logging
             )
+            hit = pred[0]
+            box_pixel = pred[1]
+            label = pred[2]
+            score = pred[3]
+
             if label is None:
                 label = l
             if (
-                hit
-                and label in masks
-                and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
+                    hit
+                    and label in masks
+                    and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
             ):
                 # hit and non-zero patch
                 # Add the predicted bounding box from the model to the list for rendering
@@ -205,9 +210,10 @@ def macaw(
             "FPS: {:.2f}".format(1.0 / (time.time() - time_start)),
             (10, frame_shape[0] - 10),
         )
-
-        # Add Frame to the render Queue
         vid_out.add(render_target)
+        # Add Frame to the render Queue
+        # while not vid_out.add(render_target) and vid_out.running:
+        #     pass
 
     # do a bit of cleanup
     fvs.stop()
