@@ -159,11 +159,16 @@ def macaw(
 
         if bbox is not None:
             bbox += crop_offset  # bbox is calculated of the cropped image -> global coordinates by adding the offset
-            contours.append((np.int32(bbox * ratio), (0, 255, 0)))
+            contours.append((np.int32(bbox * ratio), (255, 0, 0)))
             # frame = rendering.render_fill_contours(render_target, np.int32(bbox))
 
         # Render all contours
-        for c in contours:
+        # for c in contours:
+        #     render_target = rendering.render_contours(render_target, c[0], color=c[1])
+        #     render_target = rendering.render_fill_contours(render_target, c[0], color=c[1])
+
+        if len(contours) > 0:
+            c = contours[-1]
             render_target = rendering.render_contours(render_target, c[0], color=c[1])
             render_target = rendering.render_fill_contours(render_target, c[0], color=c[1])
 
