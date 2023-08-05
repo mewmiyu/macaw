@@ -26,12 +26,13 @@ def macaw(
     annotations_path,
     device,
 ):
+    # TODO: Add parameters to the yaml file.
+    detector_logging = True
     frame_width = 450
     matching_rate = 15
 
     if type(input_file) is int:
         fvs = utils.webcam_handler(input_file)  #
-
     else:
         fvs = utils.vid_handler(input_file)
 
@@ -44,36 +45,41 @@ def macaw(
             print("UNKOWN FEATURE_TYPE: Defaulting to SIFT features!")
             compute_feature = features.compute_features_sift
 
+    # Load Masks
     masks = utils.load_masks(path_masks, compute_feature)
     frame_shape = fvs.read().shape
 
+    # Load and rescale Overlays
     overlays = utils.load_overlays(path_overlays, width=int(0.75 * frame_shape[1]))  # width=int(0.75 * frame_width)
     overlay_shape = list(overlays.values())[0].shape
-
     if overlay_shape[0] > 0.5 * fvs.read().shape[0]:
         for i in overlays:
             overlays[i] = utils.resize(overlays[i], height=int(0.5 * fvs.read().shape[0]))
 
-    vid_out = video_player.VideoPlayerAsync(default_size=frame_shape[:2], target_fps=30).start()
+    # Initialize and start the VideoPlayer
+    vid_out = video_player.VideoPlayerAsync(default_size=frame_shape[:2], target_fps=60).start()
 
+    # Initialize the detector
+    model_predictor = PredictionsProvider(
+        annotations=annotations_path, model_checkpoint=model_checkpoint, device=device
+    )
+
+    # Ratio between full and computation resolution
     new_shape = utils.resize(fvs.read(), width=frame_width).shape
     ratio = frame_shape[0] / new_shape[0]
     overlay_pos = np.int32((frame_shape[0] - overlay_shape[0] - 40, 0.5 * frame_shape[1] - 0.5 * overlay_shape[1]))
 
+    # variables need across iterations
     last_frame_gray = None  # gray  # cv.UMat((1, 1))
     pts_f = None
     pts_m = None
     mask_id = None
     matches = None
     label = None
-
     count = -1
 
     # loop over frames from the video file stream
-    model_predictor = PredictionsProvider(
-        annotations=annotations_path, model_checkpoint=model_checkpoint, device=device
-    )
-    while True:  # fvs.more():
+    while vid_out.running:
         count += 1
         bbox = None
         crop_offset = np.array([[[0, 0]]])
@@ -89,7 +95,6 @@ def macaw(
 
         render_target = cv.UMat(frame)
         frame = utils.resize(frame, width=frame_width)
-        frame_size = frame.shape
         frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         frame_gray = cv.UMat(cv.GaussianBlur(frame_gray, (5, 5), 0))
 
@@ -112,7 +117,7 @@ def macaw(
         # Boxes are in the format XYXY
         if not valid or bbox is None:
             l = label
-            hit, box_pixel, label, score = model_predictor(frame, silent=False)
+            hit, box_pixel, label, score = model_predictor(frame, silent=detector_logging)
             if label is None:
                 label = l
             if (
@@ -139,14 +144,14 @@ def macaw(
                 # Crop the img
                 crop_offset = np.array([[[box_pixel[0], box_pixel[1]]]])
                 cropped = utils.crop_img(frame, *box_pixel)  # Test cropping and apply
-                frame_gray = cv.UMat(
+                cropped = cv.UMat(
                     cv.GaussianBlur(cv.cvtColor(cropped, cv.COLOR_BGR2GRAY), (5, 5), 0)
                 )
 
                 # match the features of the cropped img
-                kp, des = compute_feature(frame_gray)
-                matches, mask_id = features.match(des, masks[label], label, feature_type)
-                pts_f, pts_m = features.get_points_from_matched_keypoints(
+                kp, des = compute_feature(cropped)
+                matches, mask_id = features.match(des, masks[label], feature_type)
+                pts_f, pts_m = features.get_points_from_matches(
                     matches, kp, masks[label][mask_id].kp
                 )
 
@@ -166,7 +171,7 @@ def macaw(
         # Add Meta data:
         if len(contours) > 0:
             render_target = rendering.render_metadata(
-                render_target, label, overlays, pos=overlay_pos, alpha=0.8
+                render_target, label, overlays, pos=overlay_pos, alpha=0.9
             )  # label
 
         # show the frame and update the FPS counter
@@ -175,9 +180,6 @@ def macaw(
             "FPS: {:.2f}".format(1.0 / (time.time() - time_start)),
             (10, frame_shape[0] - 10),
         )
-
-        # cv.imshow("frame", frame_umat)
-        # cv.waitKey(1)
 
         # Add Frame to the render Queue
         vid_out.add(render_target)

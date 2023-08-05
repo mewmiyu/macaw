@@ -5,13 +5,14 @@ import time
 from threading import Thread
 
 import utils_macaw as utils
+import sys
 
 
 class VideoPlayerAsync:
-    def __init__(self, default_size, target_fps=30, queue_size=20):
+    def __init__(self, default_size, target_fps=30, queue_size=30):
         self.running = False
         self.Q = Queue(maxsize=queue_size)
-        self.thread = Thread(target=self.update, args=())
+        self.thread = Thread(target=self.main_window, args=())
         self.thread.daemon = True
         self.fps = target_fps
         self.dt = 1.0 / self.fps
@@ -19,7 +20,7 @@ class VideoPlayerAsync:
         self.window_size = self.default_size  # (height, width)
         self.ratio = float(self.window_size[0]) / float(self.window_size[1])
 
-    def update(self):
+    def main_window(self):
 
         # create display window
         cv.namedWindow("MACAW", cv.WINDOW_KEEPRATIO)
@@ -30,6 +31,10 @@ class VideoPlayerAsync:
         h_old = 0
         # keep looping infinitely
         while self.running or not self.Q.empty():
+            # Break if the Window is closed -> Stop the Thread and Stop the program
+            if cv.getWindowProperty("MACAW", cv.WND_PROP_VISIBLE) < 1:
+                break
+
             # Resize the Window to fit the image
             _, _, w, h = cv.getWindowImageRect("MACAW")
             if h != h_old:
@@ -61,11 +66,10 @@ class VideoPlayerAsync:
             # display the size of the queue on the frame
             cv.imshow("MACAW", frame)
             cv.waitKey(1)
+        self.running = False
 
     def add(self, frame):
-        while self.Q.full():
-            time.sleep(self.dt)
-        self.Q.put(frame)
+        self.Q.put(frame, timeout=10 * self.dt)
 
     def start(self):
         self.running = True
