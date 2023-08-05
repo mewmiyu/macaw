@@ -6,7 +6,7 @@ import methods.labeling as labeling
 import utils_macaw as utils
 import features
 import rendering
-
+import video_player
 
 import numpy as np
 import cv2 as cv
@@ -35,23 +35,25 @@ def macaw(
     else:
         fvs = utils.vid_handler(input_file)
 
-    vid_out = rendering.VideoReplayAsync(target_fps=30).start()
-
     match feature_type:
         case "ORB":
             compute_feature = features.compute_features_orb
         case "SIFT":
             compute_feature = features.compute_features_sift
         case _:
-            compute_feature = features.compute_features_sift # TODO: Throw exxception
+            print("UNKOWN FEATURE_TYPE: Defaulting to SIFT features!")
+            compute_feature = features.compute_features_sift
 
     masks = utils.load_masks(path_masks, compute_feature)
     overlays = utils.load_overlays(path_overlays, width=int(0.75 * frame_width))  # width=int(0.75 * frame_width)
     frame_shape = utils.resize(fvs.read(), width=frame_width).shape
+    # frame_shape = fvs.read().shape
     overlay_shape = list(overlays.values())[0].shape
     if overlay_shape[0] > 0.5 * fvs.read().shape[0]:
         for i in overlays:
             overlays[i] = utils.resize(overlays[i], height=int(0.5 * fvs.read().shape[0]))
+
+    vid_out = video_player.VideoPlayerAsync(default_size=frame_shape[:2], target_fps=30).start()
 
     last_frame_gray = None  # gray  # cv.UMat((1, 1))
     pts_f = None
