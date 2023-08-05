@@ -44,11 +44,11 @@ MATCHING_THRESHOLDS = {"hauptgebaeude_right": MATCHING_THRESHOLD,
                        "ULB_front": MATCHING_THRESHOLD}
 
 
-def compute_features_sift(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:  # -> tuple[cv.KeyPoint]
+def compute_features_sift(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:
     # SIFT: https://docs.opencv.org/4.x/da/df5/tutorial_py_sift_intro.html
 
     sift = cv.SIFT_create()
-    pic = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX)  # .astype('uint8')  # cv.cvtColor(gray, cv.COLOR_BGR2GRAY)
+    pic = cv.normalize(img, None, 0, 255, cv.NORM_MINMAX)
     kp, des = sift.detectAndCompute(pic, None)
 
     return kp, des
@@ -83,7 +83,7 @@ def compute_features_orb(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:
     return kp, des
 
 
-def get_points_from_matched_keypoints(matches_accepted, kp, kp2):
+def get_points_from_matches(matches_accepted, kp, kp2):
     pts1 = np.float32([kp[m.queryIdx].pt for m in matches_accepted]).reshape(-1, 1, 2)
     pts2 = np.float32([kp2[m.trainIdx].pt for m in matches_accepted]).reshape(-1, 1, 2)
     return pts1, pts2
@@ -141,12 +141,13 @@ def estimate_homography(pts_src, points_st):
     return m, mask
 
 
-def match(des, masks, target, use_feature):
+def match(des, masks, feature_type):
     matches_best = None
     matches_best_nr = -1
     mask_id = 0
+
     for idx, mask in enumerate(masks):
-        if use_feature == 'SIFT':
+        if feature_type == 'SIFT':
             matches_accepted = match_flann_SIFT(des, mask.des)
         else:
             matches_accepted = match_flann_ORB(des, mask.des)
@@ -155,7 +156,7 @@ def match(des, masks, target, use_feature):
             matches_best = matches_accepted
             matches_best_nr = len(matches_accepted)
             mask_id = idx
-        # return src_pts
+
     return matches_best, mask_id  # Support for list of masks -> return best match
 
 
@@ -170,9 +171,12 @@ def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts, label):
         m, msk = estimate_homography(src_pts, mask_pts)
         dst = cv.perspectiveTransform(mask.box_points, np.linalg.pinv(m))
         return dst
+
+    # TODO: If there is no homography use detector
     # With slightly fewer hits: Fit bounding box
-    if len(matches_accepted) > int( 0.75 * threshold):
+    if len(matches_accepted) > int(0.75 * threshold):
         return bounding_box(mask_pts)
+
     # Else: No matches
     return None
 
