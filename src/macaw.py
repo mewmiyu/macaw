@@ -210,10 +210,10 @@ def macaw(
             "FPS: {:.2f}".format(1.0 / (time.time() - time_start)),
             (10, frame_shape[0] - 10),
         )
-
+        vid_out.add(render_target)
         # Add Frame to the render Queue
-        while not vid_out.add(render_target) and vid_out.running:
-            pass
+        # while not vid_out.add(render_target) and vid_out.running:
+        #     pass
 
     # do a bit of cleanup
     fvs.stop()

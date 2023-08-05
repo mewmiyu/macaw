@@ -60,7 +60,6 @@ class VideoPlayerAsync:
 
             # Render the next frame
             frame = self.Q.get()
-            h = None
             frame = utils.resize(frame.get(), w, h)
 
             # display the size of the queue on the frame
