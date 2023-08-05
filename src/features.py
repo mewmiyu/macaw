@@ -174,8 +174,8 @@ def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts, label):
 
     # TODO: If there is no homography use detector
     # With slightly fewer hits: Fit bounding box
-    # if len(matches_accepted) > int(0.75 * threshold):
-    #     return bounding_box(mask_pts)
+    if len(matches_accepted) > int(0.75 * threshold):
+        return bounding_box(mask_pts)
 
     # Else: No matches
     return None

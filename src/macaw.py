@@ -140,7 +140,6 @@ def macaw(
                         (255, 0, 0),
                     )
                 )
-
                 # Crop the img
                 crop_offset = np.array([[[box_pixel[0], box_pixel[1]]]])
                 cropped = utils.crop_img(frame, *box_pixel)  # Test cropping and apply
