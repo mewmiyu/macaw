@@ -9,5 +9,7 @@ DATA:
   ANNOTATIONS_PATH: "annotations.json"
   SUPERCATEGORIES: ["hauptgebaeude", "karo5", "piloty", "ULB"]
   SUBCATEGORIES: ["right", "back", "left", "front"]
+TRAINING:
+  NUM_CLASSES: 17
 METHOD:
   NAME: "view"  # one of execute, train, view, label

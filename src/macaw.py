@@ -23,8 +23,10 @@ def macaw(
     path_overlays,
     feature_type,
     model_checkpoint,
-    annotations_path,
     device,
+    root,
+    annotations_path,
+    num_classes,
 ):
     frame_width = 450
     matching_rate = 15
@@ -43,15 +45,19 @@ def macaw(
         case "SIFT":
             compute_feature = features.compute_features_sift
         case _:
-            compute_feature = features.compute_features_sift # TODO: Throw exxception
+            compute_feature = features.compute_features_sift  # TODO: Throw exxception
 
     masks = utils.load_masks(path_masks, compute_feature)
-    overlays = utils.load_overlays(path_overlays, width=int(0.75 * frame_width))  # width=int(0.75 * frame_width)
+    overlays = utils.load_overlays(
+        path_overlays, width=int(0.75 * frame_width)
+    )  # width=int(0.75 * frame_width)
     frame_shape = utils.resize(fvs.read(), width=frame_width).shape
     overlay_shape = list(overlays.values())[0].shape
     if overlay_shape[0] > 0.5 * fvs.read().shape[0]:
         for i in overlays:
-            overlays[i] = utils.resize(overlays[i], height=int(0.5 * fvs.read().shape[0]))
+            overlays[i] = utils.resize(
+                overlays[i], height=int(0.5 * fvs.read().shape[0])
+            )
 
     last_frame_gray = None  # gray  # cv.UMat((1, 1))
     pts_f = None
@@ -64,7 +70,7 @@ def macaw(
 
     # loop over frames from the video file stream
     model_predictor = PredictionsProvider(
-        annotations=annotations_path, model_checkpoint=model_checkpoint, device=device
+        root, annotations_path, num_classes, model_checkpoint, device
     )
     while True:  # fvs.more():
         count += 1
@@ -97,7 +103,9 @@ def macaw(
             count = 0
 
         if valid:
-            bbox = features.calc_bounding_box(matches, masks[label][mask_id], pts_f, pts_m, label)
+            bbox = features.calc_bounding_box(
+                matches, masks[label][mask_id], pts_f, pts_m, label
+            )
 
         last_frame_gray = frame_gray
 
@@ -109,9 +117,9 @@ def macaw(
             if label is None:
                 label = l
             if (
-                    hit
-                    and label in masks
-                    and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
+                hit
+                and label in masks
+                and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
             ):
                 # hit and non-zero patch
                 # Add the predicted bounding box from the model to the list for rendering
@@ -138,13 +146,17 @@ def macaw(
 
                 # match the features of the cropped img
                 kp, des = compute_feature(frame_gray)
-                matches, mask_id = features.match(des, masks[label], label, feature_type)
+                matches, mask_id = features.match(
+                    des, masks[label], label, feature_type
+                )
                 pts_f, pts_m = features.get_points_from_matched_keypoints(
                     matches, kp, masks[label][mask_id].kp
                 )
 
                 # get the bounding box (None, with/without homography -> depends on number of hits)
-                bbox = features.calc_bounding_box(matches, masks[label][mask_id], pts_f, pts_m, label)
+                bbox = features.calc_bounding_box(
+                    matches, masks[label][mask_id], pts_f, pts_m, label
+                )
 
         if bbox is not None:
             bbox += crop_offset  # bbox is calculated of the cropped image -> global coordinates by adding the offset
@@ -159,7 +171,11 @@ def macaw(
         # Add Meta data:
         if len(contours) > 0:
             frame_umat = rendering.render_metadata(
-                frame_umat, label, overlays, pos=(frame_shape[0] - overlay_shape[0] - 40, 40), alpha=0.8
+                frame_umat,
+                label,
+                overlays,
+                pos=(frame_shape[0] - overlay_shape[0] - 40, 40),
+                alpha=0.8,
             )  # label
 
         # show the frame and update the FPS counter
@@ -201,8 +217,10 @@ if __name__ == "__main__":
                 path_overlays=cfg["VIDEO"]["OVERLAYS_PATH"],
                 feature_type=cfg["VIDEO"]["FEATURE_TYPE"],
                 model_checkpoint=cfg["VIDEO"]["MODEL_CHECKPOINT"],
-                annotations_path=cfg["VIDEO"]["ANNOTATIONS_PATH"],
                 device=cfg["VIDEO"]["DEVICE"],
+                root=cfg["DATA"]["PATH"],
+                annotations_path=cfg["DATA"]["ANNOTATIONS_PATH"],
+                num_classes=cfg["TRAINING"]["NUM_CLASSES"],
             )
             macaw(**execute_cfg)
         case "train":
@@ -212,7 +230,9 @@ if __name__ == "__main__":
                 weights_loader = WeightsLoader(cfg["EVALUATION"]["MODEL_CHECKPOINT"])
                 weights_loader()
             eval_cfg = dict(
+                root=cfg["DATA"]["PATH"],
                 annotations=cfg["DATA"]["ANNOTATIONS_PATH"],
+                num_classes=cfg["TRAINING"]["NUM_CLASSES"],
                 model_checkpoint=cfg["EVALUATION"]["MODEL_CHECKPOINT"],
                 device=cfg["EVALUATION"]["DEVICE"],
                 batch_size=cfg["EVALUATION"]["BATCH_SIZE"],

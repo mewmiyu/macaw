@@ -5,7 +5,11 @@ VIDEO:
   FEATURE_TYPE: "SIFT"
   MODEL_CHECKPOINT: "mobile-netv2.pt"
   DOWNLOAD: True
-  ANNOTATIONS_PATH: "annotations.json"
   DEVICE: "cuda"
+TRAINING:
+  NUM_CLASSES: 17
+DATA:
+  PATH: "data"
+  ANNOTATIONS_PATH: "annotations.json"
 METHOD:
   NAME: "execute" # one of execute, train, view, label

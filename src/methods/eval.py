@@ -18,7 +18,9 @@ class TorchImageProvider(ImageProvider):
 
     def __init__(
         self,
+        root: str,
         annotations: str,
+        num_classes: int,
         model_checkpoint: str = None,
         device: str = "cpu",
         batch_size: str = 1,
@@ -29,7 +31,9 @@ class TorchImageProvider(ImageProvider):
         using torch.utils.data.DataLoader.
 
         Args:
+            root (str): Path to the dataset.
             annotations (str): Path to the annotations file.
+            num_classes (int): Number of classes used during training.
             model_checkpoint (str, optional): Path to the model checkpoint, if none is
                 provided, no predictions are made. Defaults to None.
             device (str, optional): The device on which to run the model, one of "cuda",
@@ -46,7 +50,9 @@ class TorchImageProvider(ImageProvider):
             self.model = torch.load(model_checkpoint, map_location=self.device)
             self.model.eval()
 
-        dataset = CampusDataset(annotations, get_transform(train=False))
+        dataset = CampusDataset(
+            root, annotations, num_classes, get_transform(train=False)
+        )
         self.category_labels = {
             cat["id"]: cat["name"] for cat in dataset.categories.values()
         }
@@ -98,16 +104,25 @@ class PredictionsProvider(ImageProvider):
     """
 
     def __init__(
-        self, annotations: str, model_checkpoint: str, device: str = "cpu"
+        self,
+        root: str,
+        annotations: str,
+        num_classes: int,
+        model_checkpoint: str,
+        device: str = "cpu",
+        queue_size: int = 10,
     ) -> None:
         """Initialises the PredictionsProvider with a path to the model checkpoint and
         another path, to the annotation file.
 
         Args:
+            root (str): Path to the dataset.
             annotations (str, optional): Path to the annotations file.
+            num_classes (int): Number of classes used during training.
             model_checkpoint (str): Path to the model checkpoint.
             device (str, optional): The device on which to run the model, one of "cuda",
                 "cpu" and "mps". Defaults to "cpu".
+            queue_size (int, optional): Size of the queue to store the last predictions
 
         Raises:
             ValueError: _description_
@@ -115,6 +130,8 @@ class PredictionsProvider(ImageProvider):
         super().__init__()
 
         self.device = device
+        self.queue = []
+        self.queue_size = queue_size
         if model_checkpoint is not None:
             self.model = torch.load(model_checkpoint, map_location=self.device)
             self.model.eval()
@@ -122,7 +139,9 @@ class PredictionsProvider(ImageProvider):
             raise ValueError(f"The path to the model checkpoint was not provided!")
 
         if annotations is not None:
-            dataset = CampusDataset(annotations, get_transform(train=False))
+            dataset = CampusDataset(
+                root, annotations, num_classes, get_transform(train=False)
+            )
             self.category_labels = {
                 cat["id"]: cat["name"] for cat in dataset.categories.values()
             }
@@ -170,4 +189,14 @@ class PredictionsProvider(ImageProvider):
         if not silent:
             print(log_msg)
 
+        if len(self.queue) == self.queue_size:
+            self.queue.pop(0)
+
+        self.queue.append(res)
+        labels = [item[2] for item in self.queue]
+        unique, count = np.unique(labels, return_counts=True)
+        label = unique[np.argmax(count)]
+        print(self.queue)
+        print(len(self.queue))
+        res[2] = label
         return res

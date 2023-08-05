@@ -19,12 +19,20 @@ class CampusDataset(torch.utils.data.Dataset):
     transformations to the loaded images. It also uses annotations in the COCO-format
     """
 
-    def __init__(self, root: str = "", transforms: Compose = None):
+    def __init__(
+        self,
+        root: str,
+        annotations_path: str,
+        num_classes: int,
+        transforms: Compose = None,
+    ):
         """Initialises the CampusDataset, which loads images from the root directory,
         using COCO-formatted annotations and applies transformations onto the images.
 
         Args:
-            root (str, optional): Path to the dataset. Defaults to "".
+            root (str): Path to the dataset.
+            annotations_path (str): Path to the annotations.
+            num_classes (int): Number of classes used during training.
             transforms (Compose, optional): Transformations to be applied on the images.
                 Defaults to None.
 
@@ -33,8 +41,9 @@ class CampusDataset(torch.utils.data.Dataset):
                 categories, images, annotations.
         """
         self.root = root
+        self.num_classes = num_classes
         self.transforms = transforms
-        with open(root, mode="r") as f:
+        with open(annotations_path, mode="r", encoding="utf-8") as f:
             annotations = json.load(f)
         keys = ["categories", "images", "annotations"]
         if any([key not in annotations for key in keys]):
@@ -62,12 +71,17 @@ class CampusDataset(torch.utils.data.Dataset):
 
         boxes = torch.as_tensor([bbox], dtype=torch.float32)
         boxes = box_convert(boxes=boxes, in_fmt="xywh", out_fmt="xyxy")
-        labels = torch.as_tensor([category["id"]], dtype=torch.int64)
+
+        if category["id"] < self.num_classes:
+            labels = torch.as_tensor([category["id"]], dtype=torch.int64)
+        else:
+            labels = torch.zeros(1, dtype=torch.int64)
+
         iscrowd = torch.as_tensor([iscrowd], dtype=torch.int64)
         area = torch.as_tensor([area], dtype=torch.int64)
 
         path_parts = category["name"].split("_")
-        img_path = os.path.join("data", *path_parts, self.imgs[img_id]["file_name"])
+        img_path = os.path.join(self.root, *path_parts, self.imgs[img_id]["file_name"])
         img = Image.open(img_path)
 
         target = {

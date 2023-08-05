@@ -23,7 +23,7 @@ class DatasetImageProvider(ImageProvider):
     that are later used during training.
     """
 
-    def __init__(self, folders: str, subfolders: str) -> None:
+    def __init__(self, folders: list[str], subfolders: list[str]) -> None:
         """Initialises the DatasetImageProvider class with the names of the folders and
         subfolders where the data is stored. The labels/categories are constructed in
         the format "folder_subfolder".
@@ -77,10 +77,9 @@ class DatasetImageProvider(ImageProvider):
 
                 for file in files:
                     image = Image.open(os.path.join(subcategory_path, file))
-                    image_tensor = get_transform(train=False)(image).to("cpu")
 
                     labels.append(label)
-                    images.append(image_tensor)
+                    images.append(image)
                     file_names.append(file)
 
                 label += 1

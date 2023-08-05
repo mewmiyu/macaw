@@ -82,8 +82,12 @@ def train(cfg: dict):
 
     annotation_file = cfg["DATA"]["ANNOTATIONS_PATH"]
     # use our dataset and defined transformations
-    dataset = CampusDataset(annotation_file, get_transform(train=True))
-    dataset_test = CampusDataset(annotation_file, get_transform(train=False))
+    dataset = CampusDataset(
+        "data", annotation_file, num_classes, get_transform(train=True)
+    )
+    dataset_test = CampusDataset(
+        "data", annotation_file, num_classes, get_transform(train=False)
+    )
 
     # split the dataset in train and test set
     # since we apply different transformations to the train and test sets we need to
