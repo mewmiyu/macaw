@@ -69,7 +69,7 @@ def macaw(
 
     # Initialize the detector
     model_predictor = PredictionsProvider(
-        annotations=annotations_path, model_checkpoint=model_checkpoint, device=device
+        root, annotations_path, num_classes, model_checkpoint, device
     )
 
     # Ratio between full and computation resolution
