@@ -192,11 +192,11 @@ class PredictionsProvider(ImageProvider):
         if len(self.queue) == self.queue_size:
             self.queue.pop(0)
 
-        self.queue.append(res)
-        labels = [item[2] for item in self.queue]
-        unique, count = np.unique(labels, return_counts=True)
-        label = unique[np.argmax(count)]
-        print(self.queue)
-        print(len(self.queue))
-        res[2] = label
+        # self.queue.append(res)
+        # labels = [item[2] for item in self.queue]
+        # unique, count = np.unique(labels, return_counts=True)
+        # label = unique[np.argmax(count)]
+        # print(self.queue)
+        # print(len(self.queue))
+        # res[2] = label
         return res

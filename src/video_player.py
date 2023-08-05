@@ -56,11 +56,11 @@ class VideoPlayerAsync:
                 time.sleep(self.dt - elapsed)
 
             if self.Q.empty():
-                time.sleep(self.dt)
                 continue
 
             # Render the next frame
             frame = self.Q.get()
+            h = None
             frame = utils.resize(frame.get(), w, h)
 
             # display the size of the queue on the frame
@@ -69,7 +69,15 @@ class VideoPlayerAsync:
         self.running = False
 
     def add(self, frame):
+        # For now manual waiting due to bugs with the player
+        count = 0
+        while self.Q.full() and count < 10:
+            time.sleep(self.dt)
+            count += 1
+        if self.Q.full():
+            return False
         self.Q.put(frame, timeout=10 * self.dt)
+        return True
 
     def start(self):
         self.running = True
