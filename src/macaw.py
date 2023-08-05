@@ -45,15 +45,20 @@ def macaw(
             compute_feature = features.compute_features_sift
 
     masks = utils.load_masks(path_masks, compute_feature)
-    overlays = utils.load_overlays(path_overlays, width=int(0.75 * frame_width))  # width=int(0.75 * frame_width)
-    frame_shape = utils.resize(fvs.read(), width=frame_width).shape
-    # frame_shape = fvs.read().shape
+    frame_shape = fvs.read().shape
+
+    overlays = utils.load_overlays(path_overlays, width=int(0.75 * frame_shape[1]))  # width=int(0.75 * frame_width)
     overlay_shape = list(overlays.values())[0].shape
+
     if overlay_shape[0] > 0.5 * fvs.read().shape[0]:
         for i in overlays:
             overlays[i] = utils.resize(overlays[i], height=int(0.5 * fvs.read().shape[0]))
 
     vid_out = video_player.VideoPlayerAsync(default_size=frame_shape[:2], target_fps=30).start()
+
+    new_shape = utils.resize(fvs.read(), width=frame_width).shape
+    ratio = frame_shape[0] / new_shape[0]
+    overlay_pos = np.int32((frame_shape[0] - overlay_shape[0] - 40, 0.5 * frame_shape[1] - 0.5 * overlay_shape[1]))
 
     last_frame_gray = None  # gray  # cv.UMat((1, 1))
     pts_f = None
@@ -82,9 +87,9 @@ def macaw(
         if frame is None:
             break
 
+        render_target = cv.UMat(frame)
         frame = utils.resize(frame, width=frame_width)
         frame_size = frame.shape
-        frame_umat = cv.UMat(frame)
         frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         frame_gray = cv.UMat(cv.GaussianBlur(frame_gray, (5, 5), 0))
 
@@ -119,12 +124,12 @@ def macaw(
                 # Add the predicted bounding box from the model to the list for rendering
                 contours.append(
                     (
-                        np.array(
+                        np.int32(
                             [
-                                [[box_pixel[0], box_pixel[1]]],
-                                [[box_pixel[2], box_pixel[1]]],
-                                [[box_pixel[2], box_pixel[3]]],
-                                [[box_pixel[0], box_pixel[3]]],
+                                [[box_pixel[0] * ratio, box_pixel[1] * ratio]],
+                                [[box_pixel[2] * ratio, box_pixel[1] * ratio]],
+                                [[box_pixel[2] * ratio, box_pixel[3] * ratio]],
+                                [[box_pixel[0] * ratio, box_pixel[3] * ratio]],
                             ]
                         ),
                         (255, 0, 0),
@@ -150,32 +155,32 @@ def macaw(
 
         if bbox is not None:
             bbox += crop_offset  # bbox is calculated of the cropped image -> global coordinates by adding the offset
-            contours.append((np.int32(bbox), (0, 255, 0)))
-            # frame = rendering.render_fill_contours(frame_umat, np.int32(bbox))
+            contours.append((np.int32(bbox * ratio), (0, 255, 0)))
+            # frame = rendering.render_fill_contours(render_target, np.int32(bbox))
 
         # Render all contours
         for c in contours:
-            frame_umat = rendering.render_contours(frame_umat, c[0], color=c[1])
-            frame_umat = rendering.render_fill_contours(frame_umat, c[0], color=c[1])
+            render_target = rendering.render_contours(render_target, c[0], color=c[1])
+            render_target = rendering.render_fill_contours(render_target, c[0], color=c[1])
 
         # Add Meta data:
         if len(contours) > 0:
-            frame_umat = rendering.render_metadata(
-                frame_umat, label, overlays, pos=(frame_shape[0] - overlay_shape[0] - 40, 40), alpha=0.8
+            render_target = rendering.render_metadata(
+                render_target, label, overlays, pos=overlay_pos, alpha=0.8
             )  # label
 
         # show the frame and update the FPS counter
         rendering.render_text(
-            frame_umat,
+            render_target,
             "FPS: {:.2f}".format(1.0 / (time.time() - time_start)),
-            (10, frame_size[0] - 10),
+            (10, frame_shape[0] - 10),
         )
 
         # cv.imshow("frame", frame_umat)
         # cv.waitKey(1)
 
         # Add Frame to the render Queue
-        vid_out.add(frame_umat)
+        vid_out.add(render_target)
 
     # do a bit of cleanup
     fvs.stop()
