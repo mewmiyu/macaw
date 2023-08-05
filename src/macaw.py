@@ -17,17 +17,25 @@ from methods.eval import TorchImageProvider, PredictionsProvider
 from utils.weights_loader import WeightsLoader
 
 
-def macaw(
-    input_file,
-    path_masks,
-    path_overlays,
-    feature_type,
-    model_checkpoint,
-    device,
-    root,
-    annotations_path,
-    num_classes,
-):
+def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
+          device, root, annotations_path, num_classes,):
+    """
+    Main function of the MACAW project. This function is called from the main.py file.
+
+    Args:
+        input_file (str): Path to the input video file.
+        path_masks (str): Path to the masks folder.
+        path_overlays (str): Path to the overlays folder.
+        feature_type (str): Type of features to be used. Either "ORB" or "SIFT".
+        model_checkpoint (str): Path to the model checkpoint.
+        device (str): Device to run the model on. Either "cpu" or "cuda".
+        root (str): Path to the dataset.
+        annotations_path (str): Path to the annotations.
+        num_classes (int): Number of classes used during training.
+
+    Returns:
+        None
+    """
     # TODO: Add parameters to the yaml file.
     detector_logging = True
     frame_width = 450
@@ -223,6 +231,9 @@ def macaw(
 
 
 if __name__ == "__main__":
+    """
+    Main function of the macaw project.
+    """
     parser = argparse.ArgumentParser("macaw")
     parser.add_argument("--config", help="The config file.")
     args = parser.parse_args()
