@@ -82,8 +82,8 @@ class CampusDataset(torch.utils.data.Dataset):
 
         path_parts = category["name"].split("_")
         img_path = os.path.join(self.root, *path_parts, self.imgs[img_id]["file_name"])
-        img = Image.open(img_path)
-
+        img = Image.open(img_path).convert("RGB")
+        
         target = {
             "image_id": torch.as_tensor([img_id], dtype=torch.int64),
             "boxes": datapoints.BoundingBox(

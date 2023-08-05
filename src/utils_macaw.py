@@ -60,6 +60,7 @@ def crop_img(
 
 
 def resize(img, width=None, height=None):
+    print(img.shape)
     return imutils.resize(img, width=width, height=height)
 
 

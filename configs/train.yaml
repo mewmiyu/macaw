@@ -18,7 +18,7 @@ TRAINING:
   DEVICE: "cuda"
 DATA:
   PATH: "data"
-  ANNOTATIONS_PATH: "annotations.json"
+  ANNOTATIONS_PATH: "annotations_all.json"
   SUPERCATEGORIES: ["hauptgebaeude", "karo5", "piloty", "ULB"]
   SUBCATEGORIES: ["right", "back", "left", "front"]
 METHOD:
