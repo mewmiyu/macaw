@@ -6,6 +6,7 @@ opencv_python==4.8.0.74
 Pillow==9.4.0
 pycocotools==2.0.6
 PyYAML==6.0
+wandb==0.15.8
+--find-links https://download.pytorch.org/whl/cu113/torch_stable.html
 torch==2.0.1
 torchvision==0.15.2
-wandb==0.15.8
