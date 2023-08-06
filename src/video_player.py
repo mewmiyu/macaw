@@ -35,7 +35,7 @@ class VideoPlayerAsync:
 
     def main_window(self):
         """
-        Main loop of the thread.
+        Main loop of the video player's thread.
 
         Returns:
             None
@@ -63,7 +63,8 @@ class VideoPlayerAsync:
                 h = int(w * self.ratio)
                 h_old = h
                 w_old = w
-            cv.resizeWindow("MACAW", w, h)
+            if w != 0 and h != 0:
+                cv.resizeWindow("MACAW", w, h)
 
             # Cap the Framerate
             t = time.time()
@@ -78,7 +79,8 @@ class VideoPlayerAsync:
 
             # Render the next frame
             frame = self.Q.get()
-            frame = utils.resize(frame.get(), w, h)
+            if w != 0 and h != 0:
+                frame = utils.resize(frame.get(), w, h)
 
             # display the size of the queue on the frame
             cv.imshow("MACAW", frame)

@@ -117,23 +117,23 @@
         },
         {
             "id": 23,
-            "name": "igd_fraunhofer_right",
-            "supercategory": "igd_fraunhofer"
+            "name": "igdfraunhofer_right",
+            "supercategory": "igdfraunhofer"
         },
         {
             "id": 24,
-            "name": "igd_fraunhofer_back",
-            "supercategory": "igd_fraunhofer"
+            "name": "igdfraunhofer_back",
+            "supercategory": "igdfraunhofer"
         },
         {
             "id": 25,
-            "name": "igd_fraunhofer_left",
-            "supercategory": "igd_fraunhofer"
+            "name": "igdfraunhofer_left",
+            "supercategory": "igdfraunhofer"
         },
         {
             "id": 26,
-            "name": "igd_fraunhofer_front",
-            "supercategory": "igd_fraunhofer"
+            "name": "igdfraunhofer_front",
+            "supercategory": "igdfraunhofer"
         },
         {
             "id": 27,

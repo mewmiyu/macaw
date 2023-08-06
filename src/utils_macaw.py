@@ -82,15 +82,7 @@ def load_img(filename: str, size: tuple = None) -> tuple[np.ndarray, np.ndarray]
     img = cv.imread(filename, cv.IMREAD_UNCHANGED)
     if size:
         img = resize(img, size[1])
-        # scale_percent = int(100 * size[0] / img.shape[0])
-        # scale_percent = max(scale_percent, int(100 * size[1] / img.shape[1]))
-        #
-        # width = int(img.shape[1] * scale_percent / 100)
-        # height = int(img.shape[0] * scale_percent / 100)
-        #
-        # img = cv.resize(img, (width, height), interpolation=cv.INTER_AREA)
 
-    # gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
     gray = np.float32(cv.cvtColor(img, cv.COLOR_BGR2GRAY))
     return img, gray
 
