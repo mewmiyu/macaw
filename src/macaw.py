@@ -157,19 +157,11 @@ def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
             ):
                 # hit and non-zero patch
                 # Add the predicted bounding box from the model to the list for rendering
-                contours.append(
-                    (
-                        np.int32(
-                            [
-                                [[box_pixel[0] * ratio, box_pixel[1] * ratio]],
+                contours.append((np.int32([[[box_pixel[0] * ratio, box_pixel[1] * ratio]],
                                 [[box_pixel[2] * ratio, box_pixel[1] * ratio]],
                                 [[box_pixel[2] * ratio, box_pixel[3] * ratio]],
-                                [[box_pixel[0] * ratio, box_pixel[3] * ratio]],
-                            ]
-                        ),
-                        (255, 0, 0),
-                    )
-                )
+                                [[box_pixel[0] * ratio, box_pixel[3] * ratio]], ]),
+                        (255, 0, 0),))
                 # Crop the img
                 crop_offset = np.array([[[box_pixel[0], box_pixel[1]]]])
                 cropped = utils.crop_img(frame, *box_pixel)  # Test cropping and apply
@@ -218,6 +210,9 @@ def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
             "FPS: {:.2f}".format(1.0 / (time.time() - time_start)),
             (10, frame_shape[0] - 10),
         )
+        # cv.imshow("Frame", render_target)
+        # cv.waitKey(1)
+
         vid_out.add(render_target)
         # Add Frame to the render Queue
         # while not vid_out.add(render_target) and vid_out.running:
