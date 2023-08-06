@@ -123,6 +123,7 @@ class PredictionsProvider(ImageProvider):
             device (str, optional): The device on which to run the model, one of "cuda",
                 "cpu" and "mps". Defaults to "cpu".
             queue_size (int, optional): Size of the queue to store the last predictions
+            for a majority vote on the current label
 
         Raises:
             ValueError: _description_
@@ -183,7 +184,7 @@ class PredictionsProvider(ImageProvider):
 
             log_msg = f"[INFO] Inference time: {inference_time} | {label_best} | Confidence: {score_best} | Box: {bbox_best}"
         else:
-            res = (False, [0, 0, 0, 0], None, None)
+            res = (False, [0, 0, 0, 0], "None", None)
             log_msg = f"[INFO] Inference time: {inference_time}"
 
         if not silent:
@@ -192,12 +193,13 @@ class PredictionsProvider(ImageProvider):
         if len(self.queue) == self.queue_size:
             self.queue.pop(0)
 
-        #self.queue.append(res)
-        #labels = [item[2] for item in self.queue]
-        #print(labels)
-        #unique, count = np.unique(labels, return_counts=True)
-        #label = unique[np.argmax(count)]
-        #print(self.queue)
-        #print(len(self.queue))
-        #res[2] = label
-        return res
+        self.queue.append(res)
+        labels = [item[2] for item in self.queue]
+        unique, count = np.unique(labels, return_counts=True)
+        label = unique[np.argmax(count)]
+        return (
+            True if label != "None" else False,
+            res[1],
+            None if label == "None" else label,
+            res[3],
+        )
