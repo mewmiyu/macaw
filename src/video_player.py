@@ -5,11 +5,24 @@ import time
 from threading import Thread
 
 import utils_macaw as utils
-import sys
 
 
 class VideoPlayerAsync:
+    """
+    Class for displaying a video stream asynchronously.
+    """
     def __init__(self, default_size, target_fps=30, queue_size=30):
+        """
+        Initializes the VideoPlayerAsync object.
+
+        Args:
+            default_size (tuple): default size of the window.
+            target_fps (int, optional): target fps of the video. Defaults to 30.
+            queue_size (int, optional): size of the queue. Defaults to 30.
+
+        Returns:
+            None
+        """
         self.running = False
         self.Q = Queue(maxsize=queue_size)
         self.thread = Thread(target=self.main_window, args=())
@@ -21,7 +34,12 @@ class VideoPlayerAsync:
         self.ratio = float(self.window_size[0]) / float(self.window_size[1])
 
     def main_window(self):
+        """
+        Main loop of the thread.
 
+        Returns:
+            None
+        """
         # create display window
         cv.namedWindow("MACAW", cv.WINDOW_KEEPRATIO)
         cv.resizeWindow("MACAW", self.window_size[0], self.window_size[1])
@@ -68,6 +86,15 @@ class VideoPlayerAsync:
         self.running = False
 
     def add(self, frame):
+        """
+        Adds a frame to the queue.
+
+        Args:
+            frame (np.ndarray): frame to be added.
+
+        Returns:
+            bool: True if the frame was added, False otherwise.
+        """
         # For now manual waiting due to bugs with the player
         count = 0
         while self.Q.full() and count < 10:
@@ -79,14 +106,25 @@ class VideoPlayerAsync:
         return True
 
     def start(self):
+        """
+        Starts the thread.
+
+        Returns:
+            VideoPlayerAsync: self.
+        """
         self.running = True
         self.thread.start()
         return self
 
     def stop(self):
+        """
+        Stops the thread.
+
+        Returns:
+            None
+        """
         # indicate that the thread should be stopped
         self.running = False
         # wait until stream resources are released (producer thread might be still grabbing frame)
         self.thread.join()
         cv.destroyAllWindows()
-

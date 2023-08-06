@@ -62,11 +62,11 @@ Make sure you are in a conda environment, but if you would like to create a new 
 
 In order to run our script you need to install the following packages:
 
-    conda install gst-plugins-base gst-plugins-good gstreamer
-
-    conda install matplotlib opencv pycocotools imutils wandb -c conda-forge
-
     conda install pytorch torchvision pytorch-cuda=11.8 -c pytorch -c nvidia
+    
+    conda install matplotlib pycocotools imutils wandb -c conda-forge
+
+    pip install opencv-python
     
     pip install huggingface_hub 
 
