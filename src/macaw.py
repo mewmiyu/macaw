@@ -52,7 +52,7 @@ def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
         case "SIFT":
             compute_feature = features.compute_features_sift
         case _:
-            print("UNKOWN FEATURE_TYPE: Defaulting to SIFT features!")
+            print("UNKNOWN_FEATURE_TYPE: Defaulting to SIFT features!")
             compute_feature = features.compute_features_sift
 
     # Load Masks
@@ -129,6 +129,7 @@ def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
         else:
             count = 0
 
+        # Calculate the new bounding box after successful tracking
         if valid:
             bbox = features.calc_bounding_box(
                 matches, masks[label][mask_id], pts_f, pts_m, label
@@ -162,6 +163,7 @@ def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
                                 [[box_pixel[2] * ratio, box_pixel[3] * ratio]],
                                 [[box_pixel[0] * ratio, box_pixel[3] * ratio]], ]),
                         (255, 0, 0),))
+
                 # Crop the img
                 crop_offset = np.array([[[box_pixel[0], box_pixel[1]]]])
                 cropped = utils.crop_img(frame, *box_pixel)  # Test cropping and apply

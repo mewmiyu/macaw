@@ -35,7 +35,7 @@ class VideoPlayerAsync:
 
     def main_window(self):
         """
-        Main loop of the thread.
+        Main loop of the video player's thread.
 
         Returns:
             None
