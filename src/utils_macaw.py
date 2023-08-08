@@ -11,7 +11,7 @@ import pickle
 import imutils
 from collections import namedtuple
 
-Mask = namedtuple("Mask", ["name", "kp", "des", "box", "box_points"])
+Mask = namedtuple("Mask", ["name", "kp", "des", "box", "box_points", "img"])
 DATA = namedtuple("DATA", ["name", "id", "address", "info", "box_size"])
 
 
@@ -155,9 +155,8 @@ def load_masks(path, compute_feature):
             kp_mask,
             cv.UMat(des_mask),
             img_mask.shape[:2],
-            np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(
-                -1, 1, 2
-            ),
+            np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2),
+            img_mask,
         )
         if name in masks:
             masks[name].append(new_mask)
