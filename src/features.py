@@ -5,45 +5,49 @@ import numpy as np
 The following parameters are used for the feature detection and matching.
 """
 TRACKING_THRESHOLD = 0.95
-MATCHING_THRESHOLD = 20
+MATCHING_THRESHOLD = 15
 MATCH_DISTANCE = 0.7
 
 """
 The threshold lists for the different buildings.
 """
-TRACKING_THRESHOLDS = {"hauptgebaeude_right": TRACKING_THRESHOLD,
-                       "hauptgebaeude_back": TRACKING_THRESHOLD,
-                       "hauptgebaeude_left": TRACKING_THRESHOLD,
-                       "hauptgebaeude_front": TRACKING_THRESHOLD,
-                       "karo5_right": TRACKING_THRESHOLD,
-                       "karo5_back": TRACKING_THRESHOLD,
-                       "karo5_left": TRACKING_THRESHOLD,
-                       "karo5_front": TRACKING_THRESHOLD,
-                       "piloty_right": TRACKING_THRESHOLD,
-                       "piloty_back": TRACKING_THRESHOLD,
-                       "piloty_left": TRACKING_THRESHOLD,
-                       "piloty_front": TRACKING_THRESHOLD,
-                       "ULB_right": TRACKING_THRESHOLD,
-                       "ULB_back": TRACKING_THRESHOLD,
-                       "ULB_left": TRACKING_THRESHOLD,
-                       "ULB_front": TRACKING_THRESHOLD}
+TRACKING_THRESHOLDS = {
+    "hauptgebaeude_right": TRACKING_THRESHOLD,
+    "hauptgebaeude_back": TRACKING_THRESHOLD,
+    "hauptgebaeude_left": TRACKING_THRESHOLD,
+    "hauptgebaeude_front": TRACKING_THRESHOLD,
+    "karo5_right": TRACKING_THRESHOLD,
+    "karo5_back": TRACKING_THRESHOLD,
+    "karo5_left": TRACKING_THRESHOLD,
+    "karo5_front": TRACKING_THRESHOLD,
+    "piloty_right": TRACKING_THRESHOLD,
+    "piloty_back": TRACKING_THRESHOLD,
+    "piloty_left": TRACKING_THRESHOLD,
+    "piloty_front": TRACKING_THRESHOLD,
+    "ULB_right": TRACKING_THRESHOLD,
+    "ULB_back": TRACKING_THRESHOLD,
+    "ULB_left": TRACKING_THRESHOLD,
+    "ULB_front": TRACKING_THRESHOLD,
+}
 
-MATCHING_THRESHOLDS = {"hauptgebaeude_right": MATCHING_THRESHOLD,
-                       "hauptgebaeude_back": MATCHING_THRESHOLD,
-                       "hauptgebaeude_left": MATCHING_THRESHOLD,
-                       "hauptgebaeude_front": MATCHING_THRESHOLD,
-                       "karo5_right": MATCHING_THRESHOLD,
-                       "karo5_back": MATCHING_THRESHOLD,
-                       "karo5_left": MATCHING_THRESHOLD,
-                       "karo5_front": MATCHING_THRESHOLD,
-                       "piloty_right": MATCHING_THRESHOLD,
-                       "piloty_back": MATCHING_THRESHOLD,
-                       "piloty_left": MATCHING_THRESHOLD,
-                       "piloty_front": MATCHING_THRESHOLD,
-                       "ULB_right": MATCHING_THRESHOLD,
-                       "ULB_back": MATCHING_THRESHOLD,
-                       "ULB_left": MATCHING_THRESHOLD,
-                       "ULB_front": MATCHING_THRESHOLD}
+MATCHING_THRESHOLDS = {
+    "hauptgebaeude_right": MATCHING_THRESHOLD,
+    "hauptgebaeude_back": MATCHING_THRESHOLD,
+    "hauptgebaeude_left": MATCHING_THRESHOLD,
+    "hauptgebaeude_front": MATCHING_THRESHOLD,
+    "karo5_right": MATCHING_THRESHOLD,
+    "karo5_back": MATCHING_THRESHOLD,
+    "karo5_left": MATCHING_THRESHOLD,
+    "karo5_front": MATCHING_THRESHOLD,
+    "piloty_right": MATCHING_THRESHOLD,
+    "piloty_back": MATCHING_THRESHOLD,
+    "piloty_left": MATCHING_THRESHOLD,
+    "piloty_front": MATCHING_THRESHOLD,
+    "ULB_right": MATCHING_THRESHOLD,
+    "ULB_back": MATCHING_THRESHOLD,
+    "ULB_left": MATCHING_THRESHOLD,
+    "ULB_front": MATCHING_THRESHOLD,
+}
 
 
 def compute_features_sift(img: np.ndarray) -> tuple[cv.KeyPoint, np.ndarray]:
@@ -137,8 +141,10 @@ def bounding_box(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
     Returns:
         np.array((-1, 1, 2)): The bounding box of the given points.
     """
-    br = cv.boundingRect(np.array(pts, dtype='int32').reshape((-1, 2)))
-    return np.array([[[br[0], br[1]]], [[br[2], br[1]]], [[br[2], br[3]]], [[br[0], br[3]]]])
+    br = cv.boundingRect(np.array(pts, dtype="int32").reshape((-1, 2)))
+    return np.array(
+        [[[br[0], br[1]]], [[br[2], br[1]]], [[br[2], br[3]]], [[br[0], br[3]]]]
+    )
 
 
 def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
@@ -151,7 +157,9 @@ def convex_hull(pts: list[np.array((2, 1))]) -> np.array((-1, 1, 2)):
     Returns:
         np.array((-1, 1, 2)): The convex hull of the given points.
     """
-    return cv.convexHull(np.array(pts, dtype='int32').reshape((-1, 2)))  # .reshape((-1, 2))
+    return cv.convexHull(
+        np.array(pts, dtype="int32").reshape((-1, 2))
+    )  # .reshape((-1, 2))
 
 
 # https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
@@ -193,10 +201,12 @@ def match_flann_ORB(des, des2):
         list[cv.DMatch]: The accepted matches.
     """
     search_params = {}
-    index_params = dict(algorithm=6,
-                        table_number=6,  # was 12
-                        key_size=12,  # was 20
-                        multi_probe_level=1)  # was 2
+    index_params = dict(
+        algorithm=6,
+        table_number=6,  # was 12
+        key_size=12,  # was 20
+        multi_probe_level=1,
+    )  # was 2
 
     flann = cv.FlannBasedMatcher(index_params, search_params)
     matches_accepted = []
@@ -223,7 +233,9 @@ def estimate_homography(pts_src, points_st):
     Returns:
         tuple[np.ndarray, np.ndarray]: The homography and the mask.
     """
-    m, mask = cv.findHomography(pts_src, points_st, cv.RANSAC, 5.0, confidence=0.95)  # returns M, mask
+    m, mask = cv.findHomography(
+        pts_src, points_st, cv.RANSAC, 5.0, confidence=0.95
+    )  # returns M, mask
     return m, mask
 
 
@@ -244,7 +256,7 @@ def match(des, masks, feature_type):
     mask_id = 0
 
     for idx, mask in enumerate(masks):
-        if feature_type == 'SIFT':
+        if feature_type == "SIFT":
             matches_accepted = match_flann_SIFT(des, mask.des)
         else:
             matches_accepted = match_flann_ORB(des, mask.des)
@@ -284,8 +296,8 @@ def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts, label):
 
     # TODO: If there is no homography use detector
     # With slightly fewer hits: Fit bounding box
-    if len(matches_accepted) > int(0.75 * threshold):
-        return bounding_box(mask_pts)
+    if len(matches_accepted) > int(threshold):
+        return bounding_box(src_pts)
 
     # Else: No matches
     return None
@@ -311,7 +323,9 @@ def track(img_old, img_new, pts_old, pts_mask_old, matches_old, label):
     if label in TRACKING_THRESHOLDS:
         threshold = TRACKING_THRESHOLDS[label]
 
-    pts_new, st, err = cv.calcOpticalFlowPyrLK(img_old, img_new, pts_old, None, minEigThreshold=0.1)
+    pts_new, st, err = cv.calcOpticalFlowPyrLK(
+        img_old, img_new, pts_old, None, minEigThreshold=0.1
+    )
     good_new = None
     mask_new = None
     matches_new = None
@@ -320,7 +334,8 @@ def track(img_old, img_new, pts_old, pts_mask_old, matches_old, label):
     if pts_new is not None:
         good_new = pts_new.get()[st.get()[:, 0] == 1]
         mask_new = pts_mask_old[st.get()[:, 0] == 1]
-        matches_new = matches_old[st.get()[:, 0] == 1]
+        matches_new = np.array(matches_old)[st.get()[:, 0] == 1]
+        matches_new = [i for i in matches_new]
 
     # TODO: Check succesfull tracking condition  again
     # TODO: Maybe try to track detector results as well!

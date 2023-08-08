@@ -17,8 +17,17 @@ from methods.eval import TorchImageProvider, PredictionsProvider
 from utils.weights_loader import WeightsLoader
 
 
-def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
-          device, root, annotations_path, num_classes,):
+def macaw(
+    input_file,
+    path_masks,
+    path_overlays,
+    feature_type,
+    model_checkpoint,
+    device,
+    root,
+    annotations_path,
+    num_classes,
+):
     """
     Main function of the MACAW project. This function is called from the main.py file.
 
@@ -39,7 +48,7 @@ def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
     # TODO: Add parameters to the yaml file.
     detector_logging = True
     frame_width = 450
-    matching_rate = 15
+    matching_rate = 30
 
     if type(input_file) is int:
         fvs = utils.webcam_handler(input_file)  #
@@ -64,10 +73,10 @@ def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
         path_overlays, width=int(0.75 * frame_shape[1])
     )  # width=int(0.75 * frame_width)
     overlay_shape = list(overlays.values())[0].shape
-    if overlay_shape[0] > 0.5 * fvs.read().shape[0]:
+    if overlay_shape[0] > 0.25 * fvs.read().shape[0]:
         for i in overlays:
             overlays[i] = utils.resize(
-                overlays[i], height=int(0.5 * fvs.read().shape[0])
+                overlays[i], height=int(0.25 * fvs.read().shape[0])
             )
 
     # Initialize and start the VideoPlayer
@@ -141,9 +150,7 @@ def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
         # Boxes are in the format XYXY
         if not valid or bbox is None:
             l = label
-            pred = model_predictor(
-                frame, silent=detector_logging
-            )
+            pred = model_predictor(frame, silent=detector_logging)
             hit = pred[0]
             box_pixel = pred[1]
             label = pred[2]
@@ -152,17 +159,25 @@ def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
             if label is None:
                 label = l
             if (
-                    hit
-                    and label in masks
-                    and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
+                hit
+                and label in masks
+                and (box_pixel[2] - box_pixel[0]) * (box_pixel[3] - box_pixel[1]) > 0
             ):
                 # hit and non-zero patch
                 # Add the predicted bounding box from the model to the list for rendering
-                contours.append((np.int32([[[box_pixel[0] * ratio, box_pixel[1] * ratio]],
+                contours.append(
+                    (
+                        np.int32(
+                            [
+                                [[box_pixel[0] * ratio, box_pixel[1] * ratio]],
                                 [[box_pixel[2] * ratio, box_pixel[1] * ratio]],
                                 [[box_pixel[2] * ratio, box_pixel[3] * ratio]],
-                                [[box_pixel[0] * ratio, box_pixel[3] * ratio]], ]),
-                        (255, 0, 0),))
+                                [[box_pixel[0] * ratio, box_pixel[3] * ratio]],
+                            ]
+                        ),
+                        (255, 0, 0),
+                    )
+                )
 
                 # Crop the img
                 crop_offset = np.array([[[box_pixel[0], box_pixel[1]]]])
@@ -185,7 +200,7 @@ def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
 
         if bbox is not None:
             bbox += crop_offset  # bbox is calculated of the cropped image -> global coordinates by adding the offset
-            contours.append((np.int32(bbox * ratio), (255, 0, 0)))
+            contours.append((np.int32(bbox * ratio), (255, 255, 210)))
             # frame = rendering.render_fill_contours(render_target, np.int32(bbox))
 
         # Render all contours
