@@ -9,4 +9,4 @@ wandb/
 logs/
 __pycache__/
 res/
-*.pt
+mobile-netv2.pt
