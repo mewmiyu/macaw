@@ -291,7 +291,7 @@ def calc_bounding_box(matches_accepted, mask, src_pts, mask_pts, label):
     return None
 
 
-def track(img_old, img_new, pts_old, pts_mask_old, label):
+def track(img_old, img_new, pts_old, pts_mask_old, matches_old, label):
     """
     Tracks the given points from the old image to the new image.
 
@@ -314,15 +314,17 @@ def track(img_old, img_new, pts_old, pts_mask_old, label):
     pts_new, st, err = cv.calcOpticalFlowPyrLK(img_old, img_new, pts_old, None, minEigThreshold=0.1)
     good_new = None
     mask_new = None
+    matches_new = None
 
     valid = False  # Check if enough points are tracked
     if pts_new is not None:
         good_new = pts_new.get()[st.get()[:, 0] == 1]
         mask_new = pts_mask_old[st.get()[:, 0] == 1]
+        matches_new = matches_old[st.get()[:, 0] == 1]
 
     # TODO: Check succesfull tracking condition  again
     # TODO: Maybe try to track detector results as well!
     if float(len(good_new)) / float(len(pts_old)) >= threshold and len(good_new) > 15:
         valid = True
 
-    return good_new, mask_new, valid
+    return good_new, mask_new, matches_new, valid

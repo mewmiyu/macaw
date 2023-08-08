@@ -123,8 +123,8 @@ def macaw(input_file, path_masks, path_overlays, feature_type, model_checkpoint,
 
         # tracking:
         if count != matching_rate and pts_f is not None and len(pts_f) > 0:
-            pts_f, pts_m, valid = features.track(
-                last_frame_gray, frame_gray, pts_f, pts_m, label
+            pts_f, pts_m, matches, valid = features.track(
+                last_frame_gray, frame_gray, pts_f, pts_m, matches, label
             )
         else:
             count = 0
