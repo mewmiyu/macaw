@@ -35,6 +35,9 @@ The application is designed to help students and visitors of the TU Darmstadt to
         <li>
           <a href="#visualizing">Visualizing</a>
         </li>
+        <li>
+          <a href="#training-optional">Training (optional)</a>
+        </li>
       </ol>
     </li>
     <li>
@@ -81,8 +84,8 @@ The following sections describe how to use the application in detail.
 
 In order to use MACAW you need to provide a config file, describing what you want to do. An example file with all possible configurations can be found in [configs/base.yaml](configs/base.yaml). We also provided more specific config files, based on the method:
 
-- [configs/run-macaw.yaml](configs/run-macaw.yaml) runs the application for a given video file. The weights for the detector are also automatically downloaded if "Download" is set to True.
-- [configs/train.yaml](configs/train.yaml) configures macaw to train the detection model on the specified dataset. You can define the backbone architecture of the FasterRCNN, Hyperparameters for the training, as well as the usage of weights and biases.
+- [configs/run-macaw.yaml](configs/run-macaw.yaml) runs the application for a given video file. The weights for the detector are also automatically downloaded if "Download" is set to True (which by default is set to False).
+- [configs/train.yaml](configs/train.yaml) configures macaw to train the detection model on the specified dataset. You can define the backbone architecture of the FasterRCNN, Hyperparameters for the training, as well as the usage of the training tracking platform Weights & Biases.
 - [configs/eval.yaml](configs/eval.yaml) configures macaw to see the results of the detection model. The config file therefore contains the data as well as the model-checkpoint. If "Download" is set to true, macaw tries to download the model-weights.
 - [configs/label.yaml](configs/label.yaml) configures macaw to label a dataset. The annotation json-file stores all annotations made by the user. If the mode is set to "review" the already made annotations are displayed.
 
@@ -93,6 +96,24 @@ To run MACAW you need to open a console/terminal in the working directory and ru
     python src/macaw.py --config configs/run-macaw.yaml
 
 After that a window will open that either shows the video or the webcam stream. 
+
+### Training (optional)
+
+We provide our own weights for a Faster R-CNN model (automatically downloaded when running the script above with Download set to True in the config file), capable of detecting buildings in the TU Darmstadt campus. However, if you wish to train an object detection model using our code on our data yourself, you can do so by first downloading the dataset from:
+
+    https://studtudarmstadtde-my.sharepoint.com/:f:/g/personal/dennis_hoebelt_stud_tu-darmstadt_de/EqLhwjtcIwZDg1dMYDH40fwBCGkN1V-4zzD7PdAaLkCwCQ?e=lwYHcg
+
+Make sure that after extracting the zip file, you have a `data` folder at the top level of the folder structure (next to `src`). You are free to change the path to the data folder (or simply its name) inside the configuration file `configs/train.yaml`.
+
+To start training run the following command inside a console/terminal window:
+
+    python src/macaw.py --config configs/train.yaml
+
+Depending on whether or not you would like to include all images or only explicitly labeled ones, you may have to adjust the value of the ANNOTATIONS_PATH parameter in `train.yaml` to one of the following two options:
+
+-  `annotations_all.json` (DEFAULT), to use all (775) images, including 355 images, automatically annotated as background (which improves performance, but slows down training, since there are simply more images), or:
+- `annotations.json`, to use only the (420) truely labeled images
+
 
 <!-- CONTACTS -->
 ## Contacts

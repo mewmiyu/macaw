@@ -22,8 +22,9 @@ def get_transform(train: bool) -> T.Compose:
     transforms.append(T.ConvertImageDtype())
     transforms.append(T.Resize(640, antialias=True))
     if train:
-        # during training, randomly flip the training images
-        # and ground-truth for data augmentation
         # transforms.append(T.RandomHorizontalFlip(0.5))
+        # transforms.append(T.RandomRotation((-90, 90)))
+        # # Cropping is problematic even when using transforms v2
+        # transforms.append(T.RandomApply([T.RandomCrop(320)]))
         pass
     return T.Compose(transforms)

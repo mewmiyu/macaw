@@ -76,7 +76,9 @@ class DatasetImageProvider(ImageProvider):
                     continue
 
                 for file in files:
-                    image = Image.open(os.path.join(subcategory_path, file))
+                    image = Image.open(os.path.join(subcategory_path, file)).convert(
+                        "RGB"
+                    )
 
                     labels.append(label)
                     images.append(image)
