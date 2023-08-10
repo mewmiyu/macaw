@@ -102,5 +102,5 @@ After that a window will open that either shows the video or the webcam stream.
 
 <!-- SOURCES -->
 ## Sources
-* [Icon](https://www.canva.com/ai-image-generator/)
-* [Information](https://www.tu-darmstadt.de/universitaet/campus/stadtmitte_3/index.de.jsp)
+* The Icon of Macaw - [Icon](https://www.canva.com/ai-image-generator/)
+* The Information on the Overlays - [Information](https://www.tu-darmstadt.de/universitaet/campus/stadtmitte_3/index.de.jsp)
