@@ -1,7 +1,8 @@
 # Macaw (Mobile Augmented Campus Assistant for Wayfinding)
 <p align="center">
-<img src="https://github.com/mewmiyu/macaw/assets/60306066/f0041e53-3405-4ce8-bd7f-866726efeb29" alt="animated" />
+<img src="https://github.com/mewmiyu/macaw/assets/60306066/111352b3-c6dc-4c64-947e-20992095df4d" alt="animated" />
 </p>
+
 MACAW (Mobile Augmented Campus Assistant for Wayfinding) is a mobile application that recognizes university buildings 
 and applies natural feature tracking to track the movement of the buildings inside the frame. 
 The user sees the tracked building highlighted with a bounding box and the name of the building.
