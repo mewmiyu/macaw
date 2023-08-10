@@ -5,7 +5,7 @@
 MACAW (Mobile Augmented Campus Assistant for Wayfinding) is a mobile application that recognizes university buildings 
 and applies natural feature tracking to track the movement of the buildings inside the frame. 
 The user sees the tracked building highlighted with a bounding box and the name of the building.
-The application is designed to help students and visitors of the TU Darmstadt to find their way around the campus.
+The application is designed to help students and visitors of the TU Darmstadt to find their way around the campus. Currently only German language is supported for the overlays with the information.
 </p>
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -99,3 +99,8 @@ After that a window will open that either shows the video or the webcam stream.
 * Darya Nikitina - [mewmiyu](https://github.com/mewmiyu)
 * Dennis Hoebelt - [Hoebelt](https://github.com/Hoebelt)
 * Danail Iordanov - [DanailIordanov](https://github.com/DanailIordanov)
+
+<!-- SOURCES -->
+## Sources
+* [Icon](https://www.canva.com/ai-image-generator/)
+* [Information](https://www.tu-darmstadt.de/universitaet/campus/stadtmitte_3/index.de.jsp)
