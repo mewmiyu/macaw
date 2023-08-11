@@ -73,7 +73,7 @@ class Labeler(ImageViewer):
         for i, image in enumerate(images):
             self.coords_x = []
             self.coords_y = []
-            self.image = np.array(image.permute((1, 2, 0)))
+            self.image = np.array(image)
             self.category_id = labels[i]
             self.title = filenames[i]
 
